@@ -1,5 +1,7 @@
 
-Level10-Ropme:
+
+-ROP para saltarse ASLR
+
 
 Referencias:
 Para jugar:
@@ -8,6 +10,7 @@ Para aprender:
 http://danigargu.blogspot.com.es/2013/01/having-fun-with-rop-nxaslr-bypass-linux_18.html
 
 Básicamente se trata de seguir la guia de arriba, está muy bien escrita, todo un crack el que hace ese blog.
+Se basa de seguir el ejercicio Level10-Ropme.
 
 1.- Usar ropeme(ropshell.py) para encontrar gagdgets con los que ir saltando de ret en ret para adecuar los registros y la pila a una llamada a execve
 
