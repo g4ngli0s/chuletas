@@ -269,6 +269,7 @@ objdump -M intel -drw ./stack1 | grep strcpy -b3
 
 0xb7feff40 <_dl_runtime_resolve>:	push   eax
 
+
 Tenemos la GOT en 
 
 0x8049700:	0xb7fff918	0xb7feff40	0x0804834e	0xb7e24180
@@ -280,5 +281,20 @@ Tenemos PLT en:
 => 0x804836e <strcpy@plt+6>:	push   0x10
    0x8048373 <strcpy@plt+11>:	jmp    0x8048338
 
+
+objdump -T /lib/i386-linux-gnu/libc.so.6 | egrep 'strcpy$|system$'
+00075580 g   iD  .text	00000042  GLIBC_2.0   strcpy
+0003ab30 g    DF .text	00000037  GLIBC_PRIVATE __libc_system
+0003ab30  w   DF .text	00000037  GLIBC_2.0   system
+
+
+0x0003ab30-0x00075580= 0xFFFC55B0 (offset)
+
+gdb-peda$ p system
+$3 = {<text variable, no debug info>} 0xb7e46b30 <__libc_system>
+gdb-peda$ p strcpy
+$4 = {<text gnu-indirect-function variable, no debug info>} 0xb7e81580 <strcpy>
+gdb-peda$ p/x 0xb7e46b30-0xb7e81580
+$5 = 0xfffc55b0
 
 
