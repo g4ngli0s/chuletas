@@ -233,3 +233,52 @@ Ref: ROP-libc.pdf
 	0xb7e32b30 <__libc_system>:	sub    esp,0xc
 	0xb7e32b33 <__libc_system+3>:	mov    eax,DWORD PTR [esp+0x10]
 	
+	
+- Primero hago el sencillo, stack1:
+
+root@kali:~/Documents/Seccon# /usr/share/metasploit-framework/tools/exploit/pattern_offset.rb -l 100 -q 0x37634136
+[*] Exact match at offset 80
+
+
+objdump -t ./stack1 | grep GLIBC
+00000000       F *UND*	00000000              __libc_start_main@@GLIBC_2.0
+00000000       F *UND*	00000000              strcpy@@GLIBC_2.0
+00000000       F *UND*	00000000              printf@@GLIBC_2.0
+00000000       F *UND*	00000000              errx@@GLIBC_2.0
+00000000       F *UND*	00000000              puts@@GLIBC_2.0
+
+
+
+objdump -M intel -drw ./stack1 | grep strcpy -b3
+1479- 804835e:	68 08 00 00 00       	push   0x8
+1522- 8048363:	e9 d0 ff ff ff       	jmp    8048338 <.plt>
+1576-
+1577:08048368 <strcpy@plt>:
+1600- 8048368:	ff 25 10 97 04 08    	jmp    DWORD PTR ds:0x8049710
+1662- 804836e:	68 10 00 00 00       	push   0x10
+1706- 8048373:	e9 c0 ff ff ff       	jmp    8048338 <.plt>
+--
+6493- 8048497:	89 44 24 04          	mov    DWORD PTR [esp+0x4],eax
+6556- 804849b:	8d 44 24 1c          	lea    eax,[esp+0x1c]
+6610- 804849f:	89 04 24             	mov    DWORD PTR [esp],eax
+6669: 80484a2:	e8 c1 fe ff ff       	call   8048368 <strcpy@plt>
+6729- 80484a7:	8b 44 24 5c          	mov    eax,DWORD PTR [esp+0x5c]
+6793- 80484ab:	3d 64 63 62 61       	cmp    eax,0x61626364
+6847- 80484b0:	75 0e                	jne    80484c0 <main+0x5c>
+
+
+0xb7feff40 <_dl_runtime_resolve>:	push   eax
+
+Tenemos la GOT en 
+
+0x8049700:	0xb7fff918	0xb7feff40	0x0804834e	0xb7e24180
+0x8049710 <strcpy@got.plt>:	0x0804836e	0x0804837e	0x0804838e	0x0804839e
+
+Tenemos PLT en:
+
+   0x8048368 <strcpy@plt>:	jmp    DWORD PTR ds:0x8049710
+=> 0x804836e <strcpy@plt+6>:	push   0x10
+   0x8048373 <strcpy@plt+11>:	jmp    0x8048338
+
+
+
