@@ -314,16 +314,16 @@ Los pasos a seguir para construir el exploit serán los siguientes:
 
 1) Para guardar el offset en una posicion de memoria que tenga permisos de escritura necesitaremos:
 
-	- Instrucciones de ensamblador que nos guarde en un registro el valor donde vamos a guardar en memoria el offset (pop $reg)	
-	- Instrucciones para meter en esa posición de memoria el valor del offset (del tipo stor [reg] o add [reg])	
+- Instrucciones de ensamblador que nos guarde en un registro el valor donde vamos a guardar en memoria el offset (pop $reg)	
+- Instrucciones para meter en esa posición de memoria el valor del offset (del tipo stor [reg] o add [reg])	
 	
 2) Luego hay que poner la direccion de strcpy en un registro, para luego sumarle el offset así tenemos la llamada a system en un registro:
 
-	- Instrucciones que nos guarde el valor del strcpy del GOT en un registro de la pila (pop $reg1)	
-	- Instrucciones para sumar el offset al valor anterior (add reg1 [reg2])	
+- Instrucciones que nos guarde el valor del strcpy del GOT en un registro de la pila (pop $reg1)
+- Instrucciones para sumar el offset al valor anterior (add reg1 [reg2])	
 
 3) Por último hay que hacer la llamada a la función contenida en el registro (system):	
-	- Instrucciones de llamada: call reg1	
+- Instrucciones de llamada: call reg1	
 
 
 Ahora es cuando empieza la búsqueda de "gadgets" (Eh la qui va là). Lógicamente lo que encontremos no va a coincidir exactamente con lo que necesitemos, pero podremos adaptarlo para que, con unas operaciones, haga lo que nosostros queremos. Para buscar estas instrucciones por las que vamos a ir saltando hasta conseguir la ejecución del exploit contamos con la ayuda de ROPeMe (https://github.com/packz/ropeme):
@@ -370,11 +370,11 @@ Vamos a usar los siguiente gadgets:
 ```
 
 Copio y pego del estupendo blog de referencia para este ejercicio donde está explicado mucho mejor que si lo intentara explicar yo:
-```
+
 "El gadget (1) lo usaremos para dar valor a los registros EBX y EDI que serán usados por el (2). Con el (2) haremos un intercambio de los valores de EAX y EDI, por lo que EAX obtendrá el valor de EDI (que controlamos). Luego, con el (2) sumaremos el valor de EAX al almacenado en [ebx+0x5d5b04c4]. Como también tenemos el control de EBX, utilizaremos este gadget para sumar el valor de EAX en donde queramos, previamente restando 0x5d5b04c4 a la dirección donde se va a escribir. Con el (3) restableceremos de nuevo el valor de EBX. Con el (4) leeremos un valor de [ebx-0xb8a0008] y se lo sumaremos a EAX. Y por ultimo, con el (5) realizaremos un salto a la dirección que apunta EAX.
 ¡Menudo jaleo!
 La idea es utilizar el gadget (2) para escribir el offset entre system y strcpy en algún sitio con permisos de escritura, de forma que el registro EAX se quede con dicho offset. Luego, con el (4) sumar al offset que tenemos en EAX la dirección de strcpy obtenida de la GOT, teniendo en EAX un puntero a system. Por ultimo, con el (5), llamar a la función calculada."
-```
+
 
 Este sería mi script final haciendo los ajustes necesarios:
 
