@@ -312,16 +312,16 @@ data: 0x08049720
 
 Los pasos a seguir para construir el exploit serán los siguientes:
 
-1) Para guardar el offset en una posicion de memoria que tenga permisos de escritura necesitaremos:
-	- Instrucciones de ensamblador que nos guarde en un registro el valor donde vamos a guardar en memoria el offset (pop $reg)
-	- Instrucciones para meter en esa posición de memoria el valor del offset (del tipo stor [reg] o add [reg])
+1) Para guardar el offset en una posicion de memoria que tenga permisos de escritura necesitaremos:	
+	- Instrucciones de ensamblador que nos guarde en un registro el valor donde vamos a guardar en memoria el offset (pop $reg)	
+	- Instrucciones para meter en esa posición de memoria el valor del offset (del tipo stor [reg] o add [reg])	
 	
-2) Luego hay que poner la direccion de strcpy en un registro, para luego sumarle el offset así tenemos la llamada a system en un registro:
-	- Instrucciones que nos guarde el valor del strcpy del GOT en un registro de la pila (pop $reg1)
-	- Instrucciones para sumar el offset al valor anterior (add reg1 [reg2])
+2) Luego hay que poner la direccion de strcpy en un registro, para luego sumarle el offset así tenemos la llamada a system en un registro:	
+	- Instrucciones que nos guarde el valor del strcpy del GOT en un registro de la pila (pop $reg1)	
+	- Instrucciones para sumar el offset al valor anterior (add reg1 [reg2])	
 
-3) Por último hay que hacer la llamada a la función contenida en el registro (system):
-	- Instrucciones de llamada: call reg1
+3) Por último hay que hacer la llamada a la función contenida en el registro (system):	
+	- Instrucciones de llamada: call reg1	
 
 
 Ahora es cuando empieza la búsqueda de "gadgets" (Eh la qui va là). Lógicamente lo que encontremos no va a coincidir exactamente con lo que necesitemos, pero podremos adaptarlo para que, con unas operaciones, haga lo que nosostros queremos. Para buscar estas instrucciones por las que vamos a ir saltando hasta conseguir la ejecución del exploit contamos con la ayuda de ROPeMe (https://github.com/packz/ropeme):
