@@ -166,7 +166,7 @@ print payload
 	
 	
 
-- Todo lo anterior está muy bien, pero que pasa si no tenemos una sección no randomizable tenemos un problema.
+- Todo lo anterior está muy bien, pero si no tenemos una sección no randomizable tenemos un problema.
 
 Ref: http://danigargu.blogspot.com.es/2013/02/got-dereferencing-overwriting-aslrnx.html
 Ref: ROP-libc.pdf
@@ -278,7 +278,7 @@ b) Hallar el valor del offset, para ello podemos hacerlo de dos maneras:
 	gdb-peda$ p/x 0xb7e32b30-0xb7e6d580
 	$5 = 0xfffc55b0
    
-Estos métodos anteriores no dan el valor del offset tal como pone en el blog, me daba error con estos valores. Al investigar un poco, he visto que el valor del "strcpy" no corresponde a 0xb7e6d580 ó 0x00075580, sino que se corresponde con el contenido que hay en la dirección [0x8049710] = 0xb7e7f2f0. De esta manera recalculando el offset tenemos: 0xb7e32b30(system) -  0xb7e7f2f0(strcpy) = 0xfffb3840
+Estos métodos anteriores no dan el valor del offset tal como pone en el blog, me daba error el exploit al probarlo calculándolo de esta manera. Al investigar un poco, he visto que el valor del "strcpy" no corresponde a 0xb7e6d580 ó 0x00075580, sino que se corresponde con el contenido que hay en la dirección [0x8049710] = 0xb7e7f2f0. De esta manera el valor correcto del offset sería: 0xb7e32b30(system) -  0xb7e7f2f0(strcpy) = 0xfffb3840
   
 c) Hallar posición de memoria donde podamos guardar el offset calculado anteriormente, para eso necesitamos un lugar estático con permisos de escritura:
 
@@ -294,10 +294,12 @@ c) Hallar posición de memoria donde podamos guardar el offset calculado anterio
 - Los pasos a seguir para construir el exploit serán los siguientes:
 
 1) Para guardar el offset en una posicion de memoria que tenga permisos de escritura necesitaremos:
-	- Instrucción de ensamblador que nos guarde en un registro el valor donde vamos a guardar en memoria el offset (pop $reg)
-	- Meter en esa posición de memoria el valor del offset (del tipo stor [reg] o add [reg])
+	- Instrucciones de ensamblador que nos guarde en un registro el valor donde vamos a guardar en memoria el offset (pop $reg)
+	- Instrucciones para meter en esa posición de memoria el valor del offset (del tipo stor [reg] o add [reg])
 	
-2) Hay que poner la direccion de strcpy en un registro, para luego sumarle el offset y llegar a system
+2) Luego hay que poner la direccion de strcpy en un registro, para luego sumarle el offset así tenemos la llamada a system en un registro:
+	- Instrucciones que nos guarde el valor del strcpy del GOT en un registro de la pila (pop $reg1)
+	- Instrucciones para sumar el offset al valor anterior (add reg1 [reg2])
 
 
 
