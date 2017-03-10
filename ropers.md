@@ -312,11 +312,13 @@ data: 0x08049720
 
 Los pasos a seguir para construir el exploit serán los siguientes:
 
-1) Para guardar el offset en una posicion de memoria que tenga permisos de escritura necesitaremos:	
+1) Para guardar el offset en una posicion de memoria que tenga permisos de escritura necesitaremos:
+
 	- Instrucciones de ensamblador que nos guarde en un registro el valor donde vamos a guardar en memoria el offset (pop $reg)	
 	- Instrucciones para meter en esa posición de memoria el valor del offset (del tipo stor [reg] o add [reg])	
 	
-2) Luego hay que poner la direccion de strcpy en un registro, para luego sumarle el offset así tenemos la llamada a system en un registro:	
+2) Luego hay que poner la direccion de strcpy en un registro, para luego sumarle el offset así tenemos la llamada a system en un registro:
+
 	- Instrucciones que nos guarde el valor del strcpy del GOT en un registro de la pila (pop $reg1)	
 	- Instrucciones para sumar el offset al valor anterior (add reg1 [reg2])	
 
