@@ -511,6 +511,66 @@ Segmentation fault
 ```
 
 
+EJEMPLO 2
+
+https://sploitfun.wordpress.com/2015/05/08/bypassing-aslr-part-iii/
+
+No intentar compilar el ejecutable con las nuevas versiones de Debian o Ubuntu porque viene por defecto el gcc con PIE y no vais a conseguir que funcione por la protección. Tampoco sirve deshabilitar el pie especificamente o todo:
+
+```
+gcc -fno-stack-protector -z execstack  -fno-pie -o vuln vuln.c
+```
+
+```c
+// vuln.c
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+int main (int argc, char **argv) {
+ char buf[256];
+ int i;
+ seteuid(getuid());
+ if(argc < 2) {
+  puts("Need an argument\n");
+  exit(-1);
+ }
+ strcpy(buf, argv[1]);
+ printf("%s\nLen:%d\n", buf, (int)strlen(buf));
+ return 0;
+}
+```
+Al final lo que hice fue compilarlo en una máquina con una versión antigua de Debian y compilarlo, de esta forma tenemos el binario como queremos para explotarlo:
+
+```
+gdb-peda$ checksec 
+CANARY    : disabled
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : disabled
+RELRO     : Partial
+```
+
+Vamos a averiguar lo que necesitamos para hacer un GOT overwritten:
+
+Offset: 0xfff88ea0
+
+```
+gdb-peda$ p system - getuid
+$10 = 0xfff88ea0
+```
+
+GOT getuid: 0x804a010
+
+```
+objdump -M intell -drw ./vuln | grep -a3 getuid
+080483c0 <getuid@plt>:
+ 80483c0:	ff 25 10 a0 04 08    	jmp    DWORD PTR ds:0x804a010
+ 80483c6:	68 08 00 00 00       	push   0x8
+ 80483cb:	e9 d0 ff ff ff       	jmp    80483a0 <.plt>
+```
+
+El problema es que a la hora de buscar 
 
 
 
@@ -519,7 +579,11 @@ Segmentation fault
 
 
 
-El caso de cheer_msg (otro día...)
+
+
+
+
+El caso de cheer_msg (otro día porque creo que no es un ataque a GOT, tengo que estudiarlo más)
 
 
 El valor fijo de printf es, aquí tener en cuenta que en la segunda llamada escribe en 
