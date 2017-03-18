@@ -498,7 +498,7 @@ export LD_PRELOAD=$PWD/libc.so.6
 echo $LD_PRELOAD
 
 Cuando acabes:
-echo $LD_PRELOAD=""
+export $LD_PRELOAD=""
 
 	
 	
