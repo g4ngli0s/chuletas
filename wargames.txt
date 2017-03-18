@@ -484,7 +484,21 @@ int main(int argc, char **argv)
         return six + five;
 }
 
+Nota importante para cuando nos dan una librería con el binario:
 
+Para saber las funciones que tiene una libreria:
+nm -D /lib/libc.so.6
+
+Para ejecutar desde una libreria local:
+LD_PRELOAD="libc.so.6" ./ejecutable
+
+o bien:
+
+export LD_PRELOAD=$PWD/libc.so.6
+echo $LD_PRELOAD
+
+Cuando acabes:
+echo $LD_PRELOAD=""
 
 	
 	
