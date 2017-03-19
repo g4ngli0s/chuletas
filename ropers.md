@@ -3,7 +3,7 @@
 
 Referencias:  
 Para jugar: http://wargame2k10.nuitduhack.com/  
-Para aprender: Http://danigargu.blogspot.com.es/2013/01/having-fun-with-rop-nxaslr-bypass-linux_18.html  
+Para aprender: http://danigargu.blogspot.com.es/2013/01/having-fun-with-rop-nxaslr-bypass-linux_18.html  
 
 
 Básicamente se trata de seguir la guia de arriba, está muy bien escrita, todo un crack el que hace ese blog.
