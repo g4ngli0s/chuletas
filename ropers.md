@@ -522,7 +522,7 @@ Segmentation fault
 ```
 
 
-EJEMPLO 2
+*EJEMPLO 2*
 
 https://sploitfun.wordpress.com/2015/05/08/bypassing-aslr-part-iii/
 
@@ -635,6 +635,9 @@ payload = junk + rop
 print payload
 ```
 
+*EJEMPLO 3*
+
+De la máquina de vulnhub ropPrimer-0.2, en la que hay 3 niveles
 
 
 ---------------------------------------------------------------------------------------------------
