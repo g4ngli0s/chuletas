@@ -3,9 +3,11 @@
 Referencias para jugar y practicar un poco:
 
 http://smashthestack.org/index.html
+http://overthewire.org/wargames/
 https://exploit-exercises.com
 exploit-exercises-protostar-2.iso
 exploit-exercises-nebula-5.iso
+
 
 1.- ssh -l level1 io.netgarage.org -p2224
  
