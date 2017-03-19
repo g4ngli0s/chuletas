@@ -1,5 +1,5 @@
 
-## **ROP para saltarse ASLR**
+## **TÉCNICAS ROP para saltarse ASLR**
 
 Referencias:  
 Para jugar: http://wargame2k10.nuitduhack.com/  
