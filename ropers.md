@@ -177,7 +177,7 @@ print payload
 
 Todo lo anterior está muy bien, pero si no tenemos una sección no randomizable tenemos un problema.
 
-Ref: http://danigargu.blogspot.com.es/2013/02/got-dereferencing-overwriting-aslrnx.html	
+Ref: http://danigargu.blogspot.com.es/2013/02/got-dereferencing-overwriting-aslrnx.html   
 Ref: ROP-libc.pdf
 
 Lo que sigue es casi un copia y pega del blog, porque yo no podría explicarlo mejor. 
