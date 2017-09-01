@@ -535,7 +535,7 @@ No intentar compilar el ejecutable con las nuevas versiones de Debian o Ubuntu p
 ```
 gcc -fno-stack-protector -z execstack  -fno-pie -o vuln vuln.c
 ```
-**PIE (Position Independent Executable): No sólo hace aleatorio las direcciones de los segmentos del código (ASLR: Address Space Layout Random) sino que hace aleatorio también las direcciones base del GOT/PLT.**
+**PIE** (Position Independent Executable): No sólo hace aleatorio las direcciones de los segmentos del código (**ASLR**: Address Space Layout Random) sino que hace aleatorio también las direcciones base del GOT/PLT.
 
 ```c
 // vuln.c
