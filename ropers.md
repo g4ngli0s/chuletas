@@ -9,6 +9,9 @@ Para aprender: http://danigargu.blogspot.com.es/2013/01/having-fun-with-rop-nxas
 Básicamente se trata de seguir la guia de arriba, está muy bien escrita, todo un crack el que hace ese blog.
 Se trata de seguir el ejercicio Level10-Ropme.
 
+**ROP**: Se trata de una técnica de explotación que consiste básicamente en buscar en las secciones ejecutables del binario (que no son afectadas por el ASLR, por ejemplo: text) "gadgets", que en realidad son pequeños trozos de código seguidos inmediatamente de un RET. Después, estos gadgets serán utilizados para crear una cadena de instrucciones, de forma que cada gadget volverá al próximo gadget (a la dirección del siguiente gadget, que estará en la pila).
+
+
 **1.- Usar ropeme(ropshell.py) para encontrar gagdgets con los que ir saltando de ret en ret para adecuar los registros y la pila a una llamada a execve**
 
 ```
@@ -40,7 +43,7 @@ Con estos 6 gadgets tenemos suficiente para hacer una llamada a execve, ya que t
 
 **2.- El puntero a cadena se puede solucionar de dos maneras dependiendo si tenemos ASLR activado:**
 
-**- Sin ASLR:** Generamos una variable de entorno y pasamos esa dirección a EBX:  
+**- Sin ASLR:** Generamos una variable de entorno y pasamos esa dirección a EBX: 
 
 ```
 export EGG='/bin/sh'  
