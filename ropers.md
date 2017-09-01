@@ -188,11 +188,11 @@ Como ver las propiedades de las secciones del binario:
 	readelf -S binary
 ```
 
-La sección .got y .got.plt no son dinámicas (no afectadas por ASLR) y además son ejecutables. Es necesario que sean así porque son creadas por el linkador para saber donde están las librerías dinámicas. Ya que la GOT y la PLT se utilizan directamente desde cualquier parte del programa, necesitan disponer de una dirección estática conocida en la memoria. Además, la GOT necesita tener permisos de escritura, ya que cuando se resuelve la dirección de una función, es escrita en su correspondiente entrada de la GOT.
+**La sección .got y .got.plt no son dinámicas (no afectadas por ASLR) y además son ejecutables.** Es necesario que sean así porque son creadas por el linkador para saber donde están las librerías dinámicas. Ya que la GOT y la PLT se utilizan directamente desde cualquier parte del programa, necesitan disponer de una dirección estática conocida en la memoria. Además, la GOT necesita tener permisos de escritura, ya que cuando se resuelve la dirección de una función, es escrita en su correspondiente entrada de la GOT.
 
 ¿Y para qué se puede aprovechar todo esto?
 
-Como las direcciones de la sección GOT son estáticas (no afectadas por ASLR), y se dispone de permisos de escritura, se puede aprovechar para sobreescribir la dirección de una función utilizada en el programa (p.e, strcpy), por otra con peores intenciones (p.e, system), de forma que cuando se invoque a la entrada PLT de la función sobreescrita, el flujo del programa vaya hacia la otra. 
+Como **las direcciones de la sección GOT son estáticas (no afectadas por ASLR)**, y se dispone de permisos de escritura, se puede aprovechar para sobreescribir la dirección de una función utilizada en el programa (p.e, strcpy), por otra con peores intenciones (p.e, system), de forma que cuando se invoque a la entrada PLT de la función sobreescrita, el flujo del programa vaya hacia la otra. 
 
 Resolver direcciones de la libc
 
@@ -535,6 +535,7 @@ No intentar compilar el ejecutable con las nuevas versiones de Debian o Ubuntu p
 ```
 gcc -fno-stack-protector -z execstack  -fno-pie -o vuln vuln.c
 ```
+**PIE (Position Independent Executable): No sólo hace aleatorio las direcciones de los segmentos del código (ASLR: Address Space Layout Random) sino que hace aleatorio también las direcciones base del GOT/PLT.**
 
 ```c
 // vuln.c
@@ -555,7 +556,7 @@ int main (int argc, char **argv) {
  return 0;
 }
 ```
-Al final lo que hice fue compilarlo en una máquina con una versión antigua de Debian, de esta forma tenemos el binario como queremos para explotarlo:
+Al final lo que hice fue compilarlo en una máquina con una versión antigua de Debian (no tienen por defecto el PIE), de esta forma tenemos el binario como queremos para explotarlo:
 
 ```
 gdb-peda$ checksec 
