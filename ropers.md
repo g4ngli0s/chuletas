@@ -917,5 +917,27 @@ gdb-peda$ x/2i printf+0xffff1200
 0xb7e32b33 <__libc_system+3>:	mov    eax,DWORD PTR [esp+0x10]
 ``` 
 
+**INFO ÚTIL**
 
+Para comprobar la seguridad de un binario elf a manubrio:
+https://github.com/slimm609/checksec.sh/blob/master/checksec
+
+
+RELRO:
+```
+readelf -l file | grep GNU_RELRO 	--> Tiene RELRO
+readelf -d file | grep BIND_NOW		--> Tiene FULL RELRO
+```
+Canary:
+```
+readelf -s file | grep __stack_chk_fail	-->Tiene Canary
+```
+NX support:
+```
+readelf -l file | grep GNU_STACK | grep RW	-->NX Enable
+```
+PIE support:
+```
+readelf -h file | grep  Type:[[:space:]]*DYN	-->PIE Enable
+```
 
