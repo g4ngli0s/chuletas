@@ -920,6 +920,7 @@ gdb-peda$ x/2i printf+0xffff1200
 **INFO ÚTIL**
 
 Para comprobar la seguridad de un binario elf a manubrio:
+
 https://github.com/slimm609/checksec.sh/blob/master/checksec
 
 
