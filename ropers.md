@@ -530,12 +530,12 @@ Segmentation fault
 
 https://sploitfun.wordpress.com/2015/05/08/bypassing-aslr-part-iii/
 
-No intentar compilar el ejecutable con las nuevas versiones de Debian o Ubuntu porque viene por defecto el gcc con PIE y no vais a conseguir que funcione por la protección. Tampoco sirve deshabilitar el PIE especificamente o todo:
+No intentar compilar el ejecutable con las nuevas versiones de Debian o Ubuntu porque viene por defecto el gcc con PIE y no vais a conseguir que funcione por la protección. Tampoco sirve deshabilitar el PIE especificamente o deshabilitar todas las protecciones:
 
 ```
 gcc -fno-stack-protector -z execstack  -fno-pie -o vuln vuln.c
 ```
-**PIE** (Position Independent Executable): No sólo hace aleatorio las direcciones de los segmentos del código (**ASLR**: Address Space Layout Random) sino que hace aleatorio también las direcciones base del GOT/PLT.
+**PIE** (Position Independent Executable): No sólo hace aleatorio las direcciones de los segmentos del código (**ASLR**: Address Space Layout Random) sino que hace aleatorio también las direcciones base del GOT/PLT porque las librerias también están compiladas con esa opción. Si es el ejecutable solamente el que está compilado con PIE y no las librerías dinámicas se pueden usar la técnica del GOT, sino es imposible.
 
 ```c
 // vuln.c
