@@ -1,7 +1,7 @@
 
 ## **Teoría básica de shellcodes**
 
-### **¿Qué son estos shellcodes?** 
+### **¿Qué son los shellcodes?** 
 
 El shellcode no es más que los opcodes de las instrucciones de lenguaje ensamblador. Hagamos un ejemplo con el clásico "Hola mundo" en ensamblador:
 
