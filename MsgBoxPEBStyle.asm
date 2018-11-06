@@ -2,12 +2,12 @@
 ;Está basado en estas webs:
 ;https://idafchev.github.io/exploit/2017/09/26/writing_windows_shellcode.html
 ;https://securitycafe.ro/2016/02/15/introduction-to-windows-shellcode-development-part-3/
-                                                                                                  
+
 format PE console
 use32
 entry start
 
-  start:
+    start:
         push eax ; Save all registers
         push ebx
         push ecx
@@ -50,13 +50,13 @@ entry start
     
     ;Find the address of GetProcAddress function
     mov esi, [edx + 0x24]               ; ESI = Offset ordinals
-    add esi, ebx                                ; ESI = Ordinals table
+    add esi, ebx                        ; ESI = Ordinals table
     mov cx, [esi + ecx * 2]             ; CX = Number of function
     dec ecx
     mov esi, [edx + 0x1c]               ; ESI = Offset address table
-    add esi, ebx                                ; ESI = Address table
-    mov edx, [esi + ecx * 4]    ; EDX = Pointer(offset)
-    add edx, ebx                                ; EDX = GetProcAddress
+    add esi, ebx                        ; ESI = Address table
+    mov edx, [esi + ecx * 4]            ; EDX = Pointer(offset)
+    add edx, ebx                        ; EDX = GetProcAddress
     
     ;Find the LoadLibrary function address
     xor ecx, ecx                        ; ECX = 0
@@ -73,7 +73,7 @@ entry start
     ;Load user32.dll library
     
     add esp, 0xc                ; pop "LoadLibraryA"
-    pop ecx                             ; ECX = 0
+    pop ecx                     ; ECX = 0
     push eax                    ; EAX = LoadLibraryA
     push ecx
     mov cx, 0x6c6c              ; ll
@@ -88,9 +88,9 @@ entry start
     mov edx, [esp + 0x4]                ; EDX = GetProcAddress
     xor ecx, ecx                        ; ECX = 0
     push ecx
-    ;mov ecx, 0x61786f42                        ; oxa 78 6f 42 65 67 61 73 73 65 4d
+    ;mov ecx, 0x61786f42                ; oxa 78 6f 42 65 67 61 73 73 65 4d
     ;push ecx
-    ;sub dword [esp + 0x3], 0x61         ; Remove a
+    ;sub dword [esp + 0x3], 0x61        ; Remove a
     push 0x41786f          ; oxA
     push 0x42656761                     ; ageB
     push 0x7373654d                     ; Mess
@@ -103,31 +103,32 @@ entry start
     xor ecx, ecx                        ; ECX = 0
     ;Save string messagebox in stack
     push ecx
-    push 0x61746f4e             ; Nota 4e 6f 74 61
-    push ecx                           ; true
+    push 0x61746f4e                    ; atoN
+    push ecx
     push 0x40                          ; MessageBox type
     xor edx, edx
     mov edx, esp
-    add edx, 0x8
-    push edx            ; Nota 4e 6f 74 61
-    push edx             ; Nota 4e 6f 74 61
+    add edx, 0x8                       ; EDX = Point to string "Nota"
+    push edx
+    push edx
     push ecx
-    call eax                            ;MessageBox(0,"","",0x40)
+    call eax                           ;MessageBox(0,"Nota",Nota",0x40)
 
     ;Get ExitProcess function address
-    add esp, 0xc                           ; Clean stack
-    pop edx                       ; GetProcAddress
-    pop ebx                    ; kernel32.dll base address
-    mov ecx, 0x61737365                 ; essa
+    add esp, 0xc                   ; Clean stack
+    pop edx                        ; GetProcAddress
+    pop ebx                        ; kernel32.dll base address
+    mov ecx, 0x61737365            ; essa
     push ecx
     sub dword [esp + 0x3], 0x61    ; Remove "a"
-    push 0x636f7250                               ; Proc
-    push 0x74697845                               ; Exit
+    push 0x636f7250                ; Proc
+    push 0x74697845                ; Exit
     push esp
-    push ebx                                        ; kernel32.dll base address
-    call edx                                        ; GetProc(Exec)
+    push ebx                       ; kernel32.dll base address
+    call edx                       ; GetProc(Exec)
     
     ;Call the ExitProcess function
     xor ecx, ecx                    ; ECX = 0
     push ecx                        ; Return code = 0
-    call eax                        ; ExitProcess     
+    call eax                        ; ExitProcess
+
