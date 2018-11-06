@@ -2,7 +2,6 @@
 ;Está basado en estas webs:
 ;https://idafchev.github.io/exploit/2017/09/26/writing_windows_shellcode.html
 ;https://securitycafe.ro/2016/02/15/introduction-to-windows-shellcode-development-part-3/
-;Cuidado con hacer un shellcode con esto porque genera cadenas \x00 y no va a funcionar
 
 format PE console
 use32
@@ -89,10 +88,9 @@ entry start
     mov edx, [esp + 0x4]                ; EDX = GetProcAddress
     xor ecx, ecx                        ; ECX = 0
     push ecx
-    ;mov ecx, 0x61786f42                ; oxa 78 6f 42 65 67 61 73 73 65 4d
-    ;push ecx
-    ;sub dword [esp + 0x3], 0x61        ; Remove a
-    push 0x41786f          ; oxA
+    mov ecx, 0x6141786f                ;oxAa
+    push ecx
+    sub dword [esp + 0x3], 0x61        ; Remove a
     push 0x42656761                     ; ageB
     push 0x7373654d                     ; Mess
     push esp                            ; "MessageBox"
