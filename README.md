@@ -4,4 +4,4 @@ Todo aquello que vayamos aprendiendo, un cajón desastre para consulta rápida
 - [slqmap_ipi.txt](https://github.com/g4ngli0s/chuletas/blob/master/sqlmap_ipi.txt): Todo lo básico que hay que saber sobre sqlmap
 - [wargames.txt](https://github.com/g4ngli0s/chuletas/blob/master/wargames.txt): Algunos wargames solucionados
 - [Los ROPer](https://github.com/g4ngli0s/chuletas/blob/master/ropers.md): Aprendiendo algo de ROP
-- [Ensamblador](https://github.com/g4ngli0s/chuletas/blob/master/MsgBoxPEBStyle.asm): Aprendiendo algo de ensamblador y shellcodes
+- [MessageBox con ensamblador](https://github.com/g4ngli0s/chuletas/blob/master/MsgBoxPEBStyle.asm): Código ensamblador que hace llamadas a librerías de Windows usando la técnica del PEB
