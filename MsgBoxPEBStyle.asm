@@ -111,7 +111,7 @@ entry start
     push edx
     push edx
     push ecx
-    call eax                           ;MessageBox(0,"Nota",Nota",0x40)
+    call eax                           ; MessageBox(0,"Nota",Nota",0x40)
 
     ;Get ExitProcess function address
     add esp, 0xc                   ; Clean stack
