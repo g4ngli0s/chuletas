@@ -2,6 +2,7 @@
 ;Está basado en estas webs:
 ;https://idafchev.github.io/exploit/2017/09/26/writing_windows_shellcode.html
 ;https://securitycafe.ro/2016/02/15/introduction-to-windows-shellcode-development-part-3/
+;Cuidado con hacer un shellcode con esto porque genera cadenas \x00 y no va a funcionar
 
 format PE console
 use32
