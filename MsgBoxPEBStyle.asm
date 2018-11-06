@@ -1,3 +1,8 @@
+;Uso flat assembler para compilar y x32dbg para debugear
+;Está basado en estas webs:
+;https://idafchev.github.io/exploit/2017/09/26/writing_windows_shellcode.html
+;https://securitycafe.ro/2016/02/15/introduction-to-windows-shellcode-development-part-3/
+                                                                                                  
 format PE console
 use32
 entry start
