@@ -301,15 +301,15 @@ Si quisieramos pasar los valores hexadecimales de los opcodes con la \x:
 \x48\xbf\x2e\x62\x69\x6e\x2f\x73\x68\x00\x66\x83\xf7\x01\x57\x54\x5f\xb0\x3b\x0f\x05
 ```
 Con radare2:
-
-Assembly->Opcode
 ```
+>> Assembly->Opcode:
 rasm2 -a x86 -b 32 'jmp 0x8'
->eb06
+> eb06
 ```
-Opcode->Assembly
 ```
+>> Opcode->Assembly:
 rasm2 -a x86 -b 32 -d eb06
+> jmp 8
 ```
 
 
