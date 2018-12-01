@@ -279,7 +279,7 @@ daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
 bin:x:2:2:bin:/bin:/usr/sbin/nologin
 sys:x:3:3:sys:/dev:/usr/sbin/nologin
 ```
-Notas varias de interes: 
+#### **Notas varias de interés:** 
 
 Si quisieramos ver el shellcode en ensamblador, tan sencillo como:
 ```
