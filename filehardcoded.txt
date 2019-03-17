@@ -1,0 +1,85 @@
+¿Cómo se puede hardcodear los valores de un fichero en un archivo de C para luego al compilarlo crear ese fichero desde el propio binario?
+
+Vamos a intentarlo:
+
+1.- Creamos un archivo simple con el clásico holamundo en C o cualquier archivo de texto.
+    echo "Prueba estupida" > prueba.txt
+
+2.- Lo comprimimos con tar y bzip2 o sólo con bzip2
+    tar -cvf file.tar prueba.txt
+    bzip2 -z file.tar
+    
+    O bien directamente sin pasar por tar:
+    bzip2 -z prueba.txt
+    
+3.- Como meter los valores del binario en una variable de C:
+
+     xxd --include prueba.txt.bz2
+     
+        unsigned char prueba_txt_bz2[] = {
+          0x42, 0x5a, 0x68, 0x39, 0x31, 0x41, 0x59, 0x26, 0x53, 0x59, 0x59, 0x7b,
+          0xb8, 0xe4, 0x00, 0x00, 0x14, 0x50, 0x00, 0xc0, 0x00, 0x04, 0x00, 0x00,
+          0x08, 0x20, 0x00, 0x30, 0xcc, 0x05, 0x29, 0xa6, 0x13, 0x62, 0x27, 0x8b,
+          0xb9, 0x22, 0x9c, 0x28, 0x48, 0x2c, 0xbd, 0xdc, 0x72, 0x00
+        };
+        unsigned int prueba_txt_bz2_len = 46;
+
+    hexdump -v -e '16/1 "_x%02X" "\n"' prueba.txt.bz2 | sed 's/_/\\/g; s/\\x  //g; s/.*/    "&"/'
+    
+        "\x42\x5A\x68\x39\x31\x41\x59\x26\x53\x59\x59\x7B\xB8\xE4\x00\x00"
+        "\x14\x50\x00\xC0\x00\x04\x00\x00\x08\x20\x00\x30\xCC\x05\x29\xA6"
+        "\x13\x62\x27\x8B\xB9\x22\x9C\x28\x48\x2C\xBD\xDC\x72\x00"
+        
+        
+4.- Programa en C que crea un archivo con los valores de la variable:
+
+// HardCodearFile.cpp: define el punto de entrada de la aplicación de consola.
+
+#include "stdafx.h"
+#include <windows.h>
+#include <stdio.h>
+
+
+unsigned char prueba[] = {
+	0x42, 0x5a, 0x68, 0x39, 0x31, 0x41, 0x59, 0x26, 0x53, 0x59, 0x59, 0x7b,
+	0xb8, 0xe4, 0x00, 0x00, 0x14, 0x50, 0x00, 0xc0, 0x00, 0x04, 0x00, 0x00,
+	0x08, 0x20, 0x00, 0x30, 0xcc, 0x05, 0x29, 0xa6, 0x13, 0x62, 0x27, 0x8b,
+	0xb9, 0x22, 0x9c, 0x28, 0x48, 0x2c, 0xbd, 0xdc, 0x72, 0x00
+};
+unsigned int prueba_len = 46;
+
+
+int main()
+{
+	HANDLE hFile;
+	LPCWSTR fname = L"C:\\Users\\Public\\testfile.bz2";
+	DWORD lpdwFlags[100], dwBytesWritten;
+	BOOL test;
+	char buff[4096];
+
+	hFile = CreateFile(fname, // file to be opened
+		GENERIC_WRITE, // open for writing
+		FILE_SHARE_WRITE | FILE_SHARE_READ, // share for writing
+		NULL, // default security
+		CREATE_ALWAYS, // create new file only
+		FILE_ATTRIBUTE_NORMAL,
+		// normal file archive and impersonate client
+		NULL); // no attr. template
+
+	if (hFile == INVALID_HANDLE_VALUE)
+		printf("Could not open %s file, error %d\n", fname, GetLastError());
+	else
+	{
+		printf("File's HANDLE is OK!\n");
+		test = GetHandleInformation(hFile, lpdwFlags);
+		printf("The return value is %d, error %d\n", test, GetLastError());
+	}
+	// when finished, close the file handle
+
+	WriteFile(hFile, prueba, prueba_len, &dwBytesWritten, NULL);
+	CloseHandle(hFile);
+
+	//DeleteFile(fname);
+    return 0;
+}
+
