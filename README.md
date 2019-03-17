@@ -6,5 +6,5 @@ Todo aquello que vayamos aprendiendo, un cajón desastre para consulta rápida
 - [Los ROPer](https://github.com/g4ngli0s/chuletas/blob/master/ropers.md): Aprendiendo algo de ROP
 - [Teoría básica de shellcodes](https://github.com/g4ngli0s/chuletas/blob/master/shellcode.md): Teoría básica de shellcodes en linux
 - [Simple MessageBox en ensamblador ](https://github.com/g4ngli0s/chuletas/blob/master/MsgBoxPEBStyle.asm): Código ensamblador que muestra como hacer llamadas a librerías de Windows de manera dinamica, usando la técnica del PEB
-- [Reverse shell en ensamblador](https://github.com/g4ngli0s/chuletas/blob/master/RevShell.asm): Código ensamblador para crear un reverse shell en Windows. Llama a las librerias de manera dinamica y guarda las posiciones en memoria usando VirtualAlloc.
+- [Reverse shell en ensamblador](https://github.com/g4ngli0s/chuletas/blob/master/RevShell.asm): Código ensamblador para crear un reverse shell en Windows. Llama a las librerias de manera dinamica y guarda las posiciones en memoria usando VirtualAlloc. Lo detecta el AV
 
