@@ -8,5 +8,5 @@ Todo aquello que vayamos aprendiendo, un cajón desastre para consulta rápida
 - [Simple MessageBox en ensamblador ](https://github.com/g4ngli0s/chuletas/blob/master/MsgBoxPEBStyle.asm): Código ensamblador que muestra como hacer llamadas a librerías de Windows de manera dinamica, usando la técnica del PEB.
 - [Reverse shell en ensamblador](https://github.com/g4ngli0s/chuletas/blob/master/RevShell.asm): Código ensamblador para crear un reverse shell en Windows. Llama a las librerias de manera dinamica y guarda las posiciones en memoria usando VirtualAlloc. Este otro [reverse shell](https://github.com/g4ngli0s/chuletas/blob/master/RevShellnoAV.asm) no lo detecta el Windows Defender.
 - [File 'hardcodeado' dentro de un binario](https://github.com/g4ngli0s/chuletas/blob/master/filehardcoded.txt): Como meter dentro de un binario un fichero incrustado de tal manera que al ejecutarse se cree ese fichero. 
-- Encoder/Decoder basico con ROT-n y XOR en ensamblador: Sirve para bypassear bastantes antivirus, aunque no todos. [Encoder1](), [Encoder2](), [Decoder]()
+- Encoder/Decoder basico con ROT-n y XOR en ensamblador: Sirve para bypassear bastantes antivirus, aunque no todos. [encoder1](), [encoder2](), [decoder]()
 
