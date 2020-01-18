@@ -14,6 +14,10 @@ Para este ejemplo vamos a crear una [dll muy simple]() que nos permita mostrar l
   x86_64-w64-mingw32-gcc -c dllsimple.cpp -o dllsimple.o -D BUILD_DLL
   x86_64-w64-mingw32-gcc -o dllsimple.dll dllsimple.o -s -shared -Wl,--subsystem,windows
   ```
+  Si queremos probar que la dll funciona, tan sencillo como:
+  ```
+  rundll32.exe dllsimple.dll,MsgDll
+  ```
   
 **2.- Técnica CreateRemoteThread y LoadLibrary**
 
