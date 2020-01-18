@@ -16,8 +16,6 @@ int main(int argc, char *argv[]) {
 			strcpy(dllName, argv[2]);
 		}
 
-		//DWORD dwSize = (lstrlenW((LPCWSTR)dllName) + 1) * sizeof(wchar_t);
-
 		HANDLE hProcess;
 		hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, process_id);
 		if (!hProcess) {
@@ -43,13 +41,6 @@ int main(int argc, char *argv[]) {
 		}
 		// Process started, throw our dll in
 		// First, capture LoadLibraryA from kernel32.dll
-		/*
-		HMODULE hKernel32;
-		LPVOID  lpLoadLibraryA;
-		hKernel32 = GetModuleHandle("kernel32.dll");
-		lpLoadLibraryA = (LPVOID)GetProcAddress(hKernel32, "LoadLibraryA");
-		*/
-
 
 		HMODULE hKernel32;
 		hKernel32 = GetModuleHandle("kernel32.dll");
@@ -107,7 +98,6 @@ int main(int argc, char *argv[]) {
 		// Let the process return it's intended course. Clean up
 		CloseHandle(hThread);
 		VirtualFreeEx(hProcess, lpMemory, sizeof(dllName), MEM_RELEASE);
-		//CloseHandle(piProcInfo.hThread);
 		CloseHandle(hProcess);
 		return 0;
 }
