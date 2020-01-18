@@ -2,7 +2,7 @@
 
 **1.- Creación de una dll sencilla**
 
-Para este ejemplo vamos a crear una dll muy simple que nos permita mostrar la inyección en el proceso mostrando un MessageBox. La [dll]() va a ser la misma tanto para x86 como para x64, sólo hay que cambiar en el compilador que usemos la arquitectura. Si queremos hacerlo en modo comandos desde linux o macosx:
+Para este ejemplo vamos a crear una [dll muy simple]() que nos permita mostrar la inyección en el proceso mostrando un MessageBox. La dll va a ser la misma tanto para x86 como para x64, sólo hay que cambiar en el compilador que usemos la arquitectura. Si queremos hacerlo en modo comandos desde linux o macosx:
 
   - x86: 
   ```
@@ -17,7 +17,7 @@ Para este ejemplo vamos a crear una dll muy simple que nos permita mostrar la in
   
 **2.- Técnica CreateRemoteThread y LoadLibrary**
 
-Esta es la técnia más simple y más conocida. Hay muchas otras que quedan fuera de esta pequeña prueba. El código de la [inyección] () es el mismo para ambas arquitecturas (x86 y x64), al igual que en la dll sólo hay que cambiar la arquitectura en el compilador o bien utilizar estos comandos si estamos en linux o macosx:
+Esta es la técnia más simple y más conocida. Hay muchas otras que quedan fuera de esta pequeña prueba. El [código de la inyección] () es el mismo para ambas arquitecturas (x86 y x64), al igual que en la dll sólo hay que cambiar la arquitectura en el compilador o bien utilizar estos comandos si estamos en linux o macosx:
 
   - x86: 
   ```
