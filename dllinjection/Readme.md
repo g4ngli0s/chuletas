@@ -2,7 +2,7 @@
 
 **1.- Creación de una dll sencilla**
 
-Para este ejemplo vamos a crear una [dll muy simple](https://github.com/g4ngli0s/chuletas/blob/master/dllinjection/dllsimple.cpp) que nos permita mostrar la inyección en el proceso mostrando un MessageBox. La dll va a ser la misma tanto para x86 como para x64, sólo hay que cambiar en el compilador que usemos la arquitectura. Si queremos hacerlo en modo comandos desde linux o macosx:
+Para este ejemplo vamos a crear una [dll muy simple](https://github.com/g4ngli0s/chuletas/blob/master/dllinjection/dllsimple.cpp) que nos permita mostrar la inyección en el proceso mostrando un MessageBox. La dll va a ser la misma tanto para x86 como para x64, sólo hay que cambiar la arquitectura en el compilador que usemos. Si queremos hacerlo en modo comandos desde linux o macosx:
 
   - x86: 
   ```
@@ -31,7 +31,7 @@ Esta es la técnia más simple y más conocida. Hay muchas otras que quedan fuer
   ```
   i686-w64-mingw32-gcc -g inject.cpp -o inject.exe -lstdc++ -static
   ```
-He hecho una compilación estática para evitar problemas con las librerías compartidas que a veces no están instaladas en el sistema operativo donde se realiza la prueba. Queda claro que en este ejemplo no vamos a intentar inyectar mezclando arquitecturas, simplemente en un sistema operativo de 64 bits utilizaremos la libreria y el ejecutable de 64 bits, así como usaremos la librería y el ejecutable de 32 bits en un sistema operativo de 32 bits. Es una prueba de concepto simple, si quieres indagar más en el tema, he añadido en la siguiente sección unos enlaces interesantes sobre el tema.
+He hecho una compilación estática para evitar problemas con las librerías compartidas que a veces no están instaladas en el sistema operativo donde se realiza la prueba. Queda claro que en este ejemplo no vamos a intentar inyectar mezclando arquitecturas, simplemente en un sistema operativo de 64 bits utilizaremos la libreria y el ejecutable de 64 bits, así como usaremos la librería y el ejecutable de 32 bits en un sistema operativo de 32 bits. Es una prueba de concepto simple, si quieres indagar más en el tema, he añadido en la siguiente sección unos enlaces interesantes sobre el tema. Creo que el código del inyector está sacada de alguna de estos enlaces directamente. Doy las gracias por compartir a la gente que sabe.
 
 **3.- Enlaces para profundizar en el tema**
 
