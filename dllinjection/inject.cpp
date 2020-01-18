@@ -39,9 +39,9 @@ int main(int argc, char *argv[]) {
 			printf("[ERROR] Couldn't write any bytes.\n");
 			return 0;
 		}
+	
 		// Process started, throw our dll in
 		// First, capture LoadLibraryA from kernel32.dll
-
 		HMODULE hKernel32;
 		hKernel32 = GetModuleHandle("kernel32.dll");
 		if (!hKernel32) {
