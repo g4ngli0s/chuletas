@@ -2,7 +2,7 @@
 
 **1.- Creación de una dll sencilla**
 
-Para este ejemplo vamos a crear una [dll muy simple]() que nos permita mostrar la inyección en el proceso mostrando un MessageBox. La dll va a ser la misma tanto para x86 como para x64, sólo hay que cambiar en el compilador que usemos la arquitectura. Si queremos hacerlo en modo comandos desde linux o macosx:
+Para este ejemplo vamos a crear una [dll muy simple](https://github.com/g4ngli0s/chuletas/blob/master/dllinjection/dllsimple.cpp) que nos permita mostrar la inyección en el proceso mostrando un MessageBox. La dll va a ser la misma tanto para x86 como para x64, sólo hay que cambiar en el compilador que usemos la arquitectura. Si queremos hacerlo en modo comandos desde linux o macosx:
 
   - x86: 
   ```
