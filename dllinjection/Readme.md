@@ -32,14 +32,26 @@ He hecho una compilación estática para evitar problemas con las librerías com
 **3.- Enlaces para profundizar en el tema**
 
 http://blog.opensecurityresearch.com/2013/01/windows-dll-injection-basics.html
+
 https://github.com/fdiskyou/injectAllTheThings
+
 https://modexp.wordpress.com/2019/08/27/process-injection-apc/
+
 http://www.infernodevelopment.com/simple-c-dll-loading-message-box
+
 https://www.unknowncheats.me/forum/c-and-c-/186709-dll-injector.html
+
 https://securityxploded.com/dll-injection-and-hooking.php
+
 http://blog.opensecurityresearch.com/2013/01/windows-dll-injection-basics.html
+
 https://www.flu-project.com/2018/01/dll-hijacking-aprendiendo-los-conceptos.html
+
 https://www.codeproject.com/Articles/20084/A-More-Complete-DLL-Injection-Solution-Using-Creat
+
 https://github.com/gfreivasc/jadi
+
 https://www.youtube.com/watch?v=Gq6-1xrmFHQ
+
 https://tyranidslair.blogspot.com/2019/08/windows-code-injection-bypassing-cig.html
+
