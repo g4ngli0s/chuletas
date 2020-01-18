@@ -21,7 +21,7 @@ Para este ejemplo vamos a crear una [dll muy simple](https://github.com/g4ngli0s
   
 **2.- Técnica CreateRemoteThread y LoadLibrary**
 
-Esta es la técnia más simple y más conocida. Hay muchas otras que quedan fuera de esta pequeña prueba. El [código de la inyección]() es el mismo para ambas arquitecturas (x86 y x64), al igual que en la dll sólo hay que cambiar la arquitectura en el compilador o bien utilizar estos comandos si estamos en linux o macosx:
+Esta es la técnia más simple y más conocida. Hay muchas otras que quedan fuera de esta pequeña prueba. El [código de la inyección](https://github.com/g4ngli0s/chuletas/blob/master/dllinjection/inject.cpp) es el mismo para ambas arquitecturas (x86 y x64), al igual que en la dll sólo hay que cambiar la arquitectura en el compilador o bien utilizar estos comandos si estamos en linux o macosx:
 
   - x86: 
   ```
