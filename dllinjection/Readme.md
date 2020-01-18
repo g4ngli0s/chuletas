@@ -12,7 +12,7 @@ Para este ejemplo vamos a crear una [dll muy simple](https://github.com/g4ngli0s
   - x64:
   ```
   x86_64-w64-mingw32-gcc -c dllsimple.cpp -o dllsimple.o -D BUILD_DLL
-  x86_64-w64-mingw32-gcc -o dllsimple.dll dllsimple.o -s -shared -Wl,--subsystem,windows
+  x86_64-w64-mingw32-gcc -o dllsimple64.dll dllsimple.o -s -shared -Wl,--subsystem,windows
   ```
   Si queremos probar que la dll funciona, tan sencillo como:
   ```
@@ -29,7 +29,7 @@ Esta es la técnia más simple y más conocida. Hay muchas otras que quedan fuer
   ```
   - x64:
   ```
-  i686-w64-mingw32-gcc -g inject.cpp -o inject.exe -lstdc++ -static
+  i686-w64-mingw32-gcc -g inject.cpp -o inject64.exe -lstdc++ -static
   ```
 He hecho una compilación estática para evitar problemas con las librerías compartidas que a veces no están instaladas en el sistema operativo donde se realiza la prueba. Queda claro que en este ejemplo no vamos a intentar inyectar mezclando arquitecturas, simplemente en un sistema operativo de 64 bits utilizaremos la libreria y el ejecutable de 64 bits, así como usaremos la librería y el ejecutable de 32 bits en un sistema operativo de 32 bits. Es una prueba de concepto simple, si quieres indagar más en el tema, he añadido en la siguiente sección unos enlaces interesantes sobre el tema. Creo que el código del inyector está sacado directamente de alguna de estos enlaces. Me quito el sombrero ante toda esa gente que comparte lo que sabe. ¡Muchas gracias! ¡Compartir es vivir!
 
