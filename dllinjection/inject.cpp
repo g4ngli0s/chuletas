@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 		LPVOID  lpLoadLibraryA;
 		lpLoadLibraryA = (LPVOID)(GetProcAddress(hKernel32, "LoadLibraryA"));
 		if (!lpLoadLibraryA) {
-			printf("[ERROR] Couldn't open LoadLibraryW.\n");
+			printf("[ERROR] Couldn't open LoadLibraryA.\n");
 			return 0;
 		}
 
