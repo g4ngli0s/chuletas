@@ -82,7 +82,6 @@ int main(int argc, char *argv[]) {
 		DWORD  hDll;
 		BOOL tExit;
 		tExit = GetExitCodeThread(hThread, &hDll);
-		//printf("Thread & Result: %d,%d\n", GetCurrentThreadId(),hDll);
 		if (!tExit) {
 			printf("[ERROR] Can't get LoadLibraryA return handle.\n");
 			return 0;
