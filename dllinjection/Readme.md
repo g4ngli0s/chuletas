@@ -67,7 +67,7 @@ La idea es la misma que antes, pero en este caso no necesitamos del archivo fís
  ```
  msfvenom -a x64 --platform Windows -p windows/x64/exec cmd=calc.exe -b '\x00\x0a\x0d' -f c -v shellcode
  ```
- El[código](https://github.com/g4ngli0s/chuletas/blob/master/dllinjection/injectshellcode.cpp) está hecho para un proceso de 64 bits, para 32 bits también debería funcionar. Y para compilar, lo mismo que antes:
+ El [código](https://github.com/g4ngli0s/chuletas/blob/master/dllinjection/injectshellcode.cpp) está hecho para un proceso de 64 bits, para 32 bits también debería funcionar. Y para compilar, lo mismo que antes:
 ```
 x86_64-w64-mingw32-gcc -g injectshellcode.cpp -o injectshellcode.exe -lstdc++ -static
 ```
