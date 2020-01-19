@@ -69,7 +69,6 @@ La idea es la misma que antes, pero en este caso no necesitamos del archivo fís
    ```
  El [código](https://github.com/g4ngli0s/chuletas/blob/master/dllinjection/injectshellcode.cpp) está hecho para un proceso de 64 bits, para 32 bits también debería funcionar. Y para compilar, lo mismo que antes:
 
-  ```
   - x86: 
   ```
   i686-w64-mingw32-gcc -g injectshellcode.cpp -o injectshellcode.exe -lstdc++ -static
