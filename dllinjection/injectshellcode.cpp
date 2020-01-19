@@ -31,7 +31,7 @@ unsigned char shellcode[] =
 
 
 
-void inject(DWORD );
+void inject(DWORD);
 int main(int i,char *a[])
 {
 	if(i!=2)
