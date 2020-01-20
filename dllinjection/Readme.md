@@ -80,4 +80,4 @@ La idea es la misma que antes, pero en este caso no necesitamos del archivo fís
   ```
   x86_64-w64-mingw32-gcc -g injectshellcode.cpp -o injectshellcode.exe -lstdc++ -static
   ```
-  Una variante es utilizar una dll para ejecutar ese shellcode. 
+  Una [variante](https://github.com/g4ngli0s/chuletas/blob/master/dllinjection/dllShell.cpp) es utilizar una dll para ejecutar shellcode. 
