@@ -1,6 +1,6 @@
 # Netcat para Windows 64 bits
 
-Compilar netcat para usar solamente en una versión de 64 bits de windows. Siguiendo el [makefile](https://github.com/g4ngli0s/chuletas/blob/master/netcat64/makefile) se entiende perfectamente. 
+Compilar netcat para usar solamente en una versión de 64 bits de windows. Leyendo el [makefile](https://github.com/g4ngli0s/chuletas/blob/master/netcat64/makefile) se entiende perfectamente. 
 
 Todo gracias a estos magníficos enlaces:
 
