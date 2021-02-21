@@ -37,6 +37,3 @@ while ($true) {
     Start-Sleep -Seconds 5
 }
 
-
-[array]$shurmano = "I","n","t","E","r","n","e","X" ;
-set-alias new-exercise $($shurmano | foreach { if ($_ -cmatch '[A-Z]' -eq $true) {$x += $_}}; $x)
