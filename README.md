@@ -11,4 +11,5 @@ Todo aquello que vayamos aprendiendo, un cajón desastre para consulta rápida
 - Encoder/Decoder basico con ROT-n y XOR en ensamblador: Sirve para bypassear bastantes antivirus, aunque no todos. [encoder1](https://github.com/g4ngli0s/chuletas/blob/master/encoder1.asm), [encoder2](https://github.com/g4ngli0s/chuletas/blob/master/encoder2.asm) y [decoder](https://github.com/g4ngli0s/chuletas/blob/master/decoder.asm)
 - Prueba básica de [dll injection](https://github.com/g4ngli0s/chuletas/blob/master/dllinjection/Readme.md): Código que sirve tanto para x86 como x64.
 - Trucos para bypassear AV y AMSI en [powershell](https://github.com/g4ngli0s/chuletas/blob/master/bypasspowershell/Readme.md).
+- Ejemplos básicos en ensamblador x86 de un [meterpreter](https://github.com/g4ngli0s/chuletas/blob/master/meter.asm) y un [beacon](https://github.com/g4ngli0s/chuletas/blob/master/beacon.asm).
 
