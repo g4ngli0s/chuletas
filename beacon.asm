@@ -1,4 +1,4 @@
-                                                               format PE GUI
+format PE GUI
 use32
 entry start
 
