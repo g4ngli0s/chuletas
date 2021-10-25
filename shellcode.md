@@ -311,6 +311,13 @@ rasm2 -a x86 -b 32 'jmp 0x8'
 rasm2 -a x86 -b 32 -d eb06
 > jmp 8
 ```
+#### **Cross-compiler:** 
+
+```
+nasm -f win32 --prefix _ -o main.obj main.asm
+i686-w64-mingw32-ld -static -nostdlib -o main.exe main.obj
+```
+
 
 
 *That's all folks!*
