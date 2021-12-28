@@ -182,7 +182,7 @@ En los comentarios del código explica los valores que deben tener los registros
 |1			|sys_write	|unsigned int fd			|const char *buf		|size_t count|			
 |2			|sys_open	|const char *filename	|int flags			|int mode|
 
-Enlaces a la lista completa de las llamadas a sistema para [32bits](http://syscalls.kernelgrok.com/) y para [64bits](http://blog.rchapman.org/posts/Linux_System_Call_Table_for_x86_64/)
+Enlaces a la lista completa de las llamadas a sistema para [32bits](https://chromium.googlesource.com/chromiumos/docs/+/master/constants/syscalls.md#x86-32_bit) y para [64bits](http://blog.rchapman.org/posts/Linux_System_Call_Table_for_x86_64/)
 
 Compilamos como en el ejemplo anterior:
 
